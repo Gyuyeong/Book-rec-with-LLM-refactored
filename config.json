@@ -1,0 +1,11 @@
+{
+    "enable_simultaneous_evaluation": true,
+    "elasticsearch_result_count": 30,
+    "default_number_of_books_to_return": 3,
+    "elasticsearch_url": "https://825f-203-252-33-3.ngrok-free.app:443",
+    "modelchoice": "openai",
+    "mongodb_uri": "mongodb uri",
+    "intention_generation_url": "",
+    "evaluation_generation_url": "",
+    "final_generation_url": ""
+}
