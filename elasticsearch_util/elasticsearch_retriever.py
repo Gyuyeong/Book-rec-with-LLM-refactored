@@ -7,7 +7,7 @@ import numpy as np
 
 
 class Bookdata:
-    def __init__(self, title, author, publisher, introduction, isbn, tensor):
+    def __init__(self, title, introduction, author, publisher, isbn, tensor):
         self.title = title
         self.author = author
         self.publisher = publisher
@@ -124,7 +124,6 @@ class ElasticSearchBM25Retriever:
             index=self.index_name, body=query_dict, request_timeout=1200
         )
         docs = []
-
         for r in res["hits"]["hits"]:
             bd = Bookdata(
                 r["_source"]["title"],
@@ -132,7 +131,7 @@ class ElasticSearchBM25Retriever:
                 r["_source"]["author"],
                 r["_source"]["publisher"],
                 r["_source"]["isbn"],
-                np.array(r["_source"]["tensor"]),
+                np.array(r["_source"]["embedding"]),
             )
             docs.append(bd)
 

@@ -1,12 +1,14 @@
 {
     "elasticsearch_result_count": 30,
     "default_number_of_books_to_return": 3,
-    "elasticsearch_url": "https://825f-203-252-33-3.ngrok-free.app:443",
-    "modelchoice": "openai",
+    "elasticsearch_url": "https://cc61-121-169-21-127.ngrok-free.app",
+    "modelchoice": "opensourceLLM",
     "mongodb_uri": "mongodb uri",
-    "intention_generation_url": "",
-    "evaluation_generation_url": "",
-    "final_generation_url": "",
+    "intention_generation_url": "http://127.0.0.1:5001/generate/intention",
+    "evaluation_generation_url": "http://127.0.0.1:5001/generate/evaluation",
+    "final_generation_url": "http://127.0.0.1:5001/generate/final",
     "use_gpt_api_for_eval": false,
-    "use_gpt_api_for_final": false
+    "use_gpt_api_for_final": false,
+    "meta_search_canned_text_ko": "다음과 같은 도서가 검색되었습니다.",
+    "meta_search_canned_text_en": "Following is the search result."
 }

@@ -1,6 +1,10 @@
+import sys
+
+sys.path.append(".")
 from flask import Flask, render_template, request, session
 from system_manager.without_langchain import interact_opensourceGeneration
-from system_manager.with_langchain.with_langchain import interact_fullOpenAI
+
+# from system_manager.with_langchain.with_langchain import interact_fullOpenAI
 
 # from opensourceLLMGenerate import interact_opensourceGeneration
 import threading
@@ -43,17 +47,17 @@ def home():
 
     # start server-side loop in separate thread
 
-    if config["modelchoice"] == "openai":
-        server_thread = threading.Thread(
-            target=interact_fullOpenAI,
-            args=(
-                input_queue_dict[user_id],
-                output_queue_dict[user_id],
-                langchoice_queue_dict[user_id],
-                user_id,
-            ),
-        )
-    elif config["modelchoice"] == "opensourceLLM":
+    # if config["modelchoice"] == "openai":
+    #     server_thread = threading.Thread(
+    #         target=interact_fullOpenAI,
+    #         args=(
+    #             input_queue_dict[user_id],
+    #             output_queue_dict[user_id],
+    #             langchoice_queue_dict[user_id],
+    #             user_id,
+    #         ),
+    #     )
+    if config["modelchoice"] == "opensourceLLM":
         server_thread = threading.Thread(
             target=interact_opensourceGeneration,
             args=(
@@ -67,7 +71,7 @@ def home():
     server_thread.start()
     print(f"thread id {server_thread} started for user {user_id}")
     idthreadDict[user_id] = server_thread
-    return render_template("index.html", user_id=user_id)
+    return render_template("index_mobile.html", user_id=user_id)
 
 
 @app.route("/process", methods=["POST"])

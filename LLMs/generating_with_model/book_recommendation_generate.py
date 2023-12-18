@@ -1,5 +1,6 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import pipeline
+from utils.translation import translate_text
 from peft import PeftModel
 
 IGNORE_INDEX = -100
@@ -70,7 +71,12 @@ import re
 
 
 def generate_recommendation(
-    user_input: str, book_data: list, isbn_list: list, model=model, tokenizer=tokenizer
+    user_input: str,
+    book_data: list,
+    target_lang,
+    isbn_list: list,
+    model=model,
+    tokenizer=tokenizer,
 ):
     outstring = str
     generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
@@ -111,19 +117,20 @@ def generate_recommendation(
             + title_and_author_result[0][0]
             + "] ("
             + title_and_author_result[0][1]
-            + " 저)"
+            + ")"
         )
         outstring += (
             "["
             + title_and_author_result[0][0]
             + "] ("
             + title_and_author_result[0][1]
-            + " 저)"
+            + ")"
             + "<br>"
         )
         final_result = result[0]["generated_text"].replace(book_prompt, "")
         print(final_result)
         print()
+        final_result = translate_text(target_lang, final_result)
         outstring += (
             final_result
             + '<br><a href="https://www.booksonkorea.com/product/'
@@ -148,10 +155,12 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 
-@app.route("/generate/intention", methods=["POST"])
+@app.route("/generate/final", methods=["POST"])
 def generate():
     data = request.json
-    return generate_recommendation(data["input"], data["books"])
+    return generate_recommendation(
+        data["input"], data["books"], data["lang"], data["isbn_list"]
+    )
 
 
 if __name__ == "__main__":
