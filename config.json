@@ -1,7 +1,7 @@
 {
     "elasticsearch_result_count": 30,
     "default_number_of_books_to_return": 3,
-    "elasticsearch_url": "https://cc61-121-169-21-127.ngrok-free.app",
+    "elasticsearch_url": "https://1728-121-169-21-127.ngrok-free.app",
     "modelchoice": "opensourceLLM",
     "mongodb_uri": "mongodb uri",
     "intention_generation_url": "http://127.0.0.1:5001/generate/intention",

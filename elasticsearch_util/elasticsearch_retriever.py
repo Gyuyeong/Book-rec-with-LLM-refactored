@@ -81,7 +81,7 @@ class ElasticSearchBM25Retriever:
         return cls(es, index_name)
 
     def search_with_query(self, query: str) -> list[Bookdata]:
-        with open("config.json") as f:
+        with open("config.json", encoding="UTF-8") as f:
             config = json.load(f)
         n = config["elasticsearch_result_count"]
         # class Document(Serializable):

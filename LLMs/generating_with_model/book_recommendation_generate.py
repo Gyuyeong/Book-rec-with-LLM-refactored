@@ -1,3 +1,6 @@
+import sys
+
+sys.path.append(".")
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import pipeline
 from utils.translation import translate_text
