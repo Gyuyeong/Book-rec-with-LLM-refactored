@@ -26,7 +26,7 @@ import datetime
 from elasticsearch_util.elasticsearch_retriever import ElasticSearchBM25Retriever
 from utils.translation import translate_text
 
-with open("config.json") as f:
+with open("config.json", "r", encoding="UTF-8") as f:
     config = json.load(f)
 
 elasticsearch_url = config["elasticsearch_url"]
@@ -257,11 +257,15 @@ def interact_opensourceGeneration(
             weboutput_queue.put(generated_sentences)
         elif author != None:
             search_result = author_search(author, webinput)
-            generated_sentences = generate_meta_search_sentence(search_result, webinput)
+            generated_sentences = generate_meta_search_sentence(
+                search_result, webinput, langchoice
+            )
             weboutput_queue.put(generated_sentences)
         elif publisher != None:
             search_result = publisher_search(publisher, webinput)
-            generated_sentences = generate_meta_search_sentence(search_result, webinput)
+            generated_sentences = generate_meta_search_sentence(
+                search_result, webinput, langchoice
+            )
             weboutput_queue.put(generated_sentences)
         else:
             search_result = keyword_search(webinput)

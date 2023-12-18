@@ -18,7 +18,7 @@ idthreadDict = {}
 input_queue_dict = {}
 langchoice_queue_dict = {}
 output_queue_dict = {}
-with open("config.json") as f:
+with open("config.json", encoding="UTF-8") as f:
     config = json.load(f)
 
 
