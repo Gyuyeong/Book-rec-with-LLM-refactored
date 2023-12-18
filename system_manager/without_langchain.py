@@ -89,19 +89,81 @@ def publisher_search(publisher_name, user_query) -> list:
 
 
 def keyword_search(user_query) -> list:
-    # TODO
     result = retriever.search_with_query(user_query)
     return result
 
 
-def evaluate_books(book_list) -> list:
-    # TODO
+def evaluate_books(book_list, user_query) -> list:
+    if config["use_gpt_api_for_eval"]:
+        from LLMs.GPT_API_utils.Recommendation_Evaluation import isbookPass
+
+        bookresultQueue = queue.Queue()
+
+        def book_pass_thread(userquery: str, bookinfo):
+            nonlocal bookresultQueue
+            if isbookPass(userquery, bookinfo):
+                bookresultQueue.put(bookinfo)
+            return
+
+        threadlist = []
+        for book in book_list:
+            t = threading.Thread(target=book_pass_thread, args=(user_query, book))
+            threadlist.append(t)
+            t.start()
+
+        for t in threadlist:
+            t.join()
+
+        returnlist = list()
+        while not bookresultQueue.empty():
+            returnlist.append(bookresultQueue.get())
+        return returnlist
+
+    else:
+        url = config["evaluation_generation_url"]
+        for book in book_list:
+            fullstring = (
+                f"QUERY: {{user_query}}, INFO: "
+                + f"{{title='{book.title}' introduction='{book.introduction}' author='{book.author}' publisher='{book.publisher}' isbn={book.isbn}}}"
+            )
+            data = {"fullstring": fullstring}
+            evaluate_rawstring = requests.post(url, json=data)
+        # TODO
     return
 
 
-def generate_recommendation_sentence(book_list, user_query):
-    # TODO
-    return
+def generate_recommendation_sentence(book_list, user_query, langchoice):
+    if config["use_gpt_api_for_eval"]:
+        langchoice_Reference = {"en": " Answer in English.", "ko": " 한국어로 답변해줘."}
+        from LLMs.GPT_API_utils.Generate_Recommendation import generate_recommendation
+
+        result = str
+        for book in book_list:
+            result += f"[{book.title}] ({book.author})<br>"
+            completion = generate_recommendation(
+                langchoice_Reference[langchoice], book, user_query
+            )
+            result += (
+                completion["choices"][0]["message"]["content"]
+                + '<br><a href="https://www.booksonkorea.com/product/'
+                + str(book.isbn)
+                + '" target="_blank" class="quickViewButton">Quick View</a><br><br>'
+            )
+        return result
+    else:
+        url = config["final_generation_url"]
+        bookStringList = list()
+        isbnlist = list()
+        for book in book_list:
+            fullstring = (
+                "book: "
+                + f"{{title='{book.title}', author='{book.author}, introduction='{book.introduction}'}}"
+            )
+            bookStringList.append(fullstring)
+            isbnlist.append(book.isbn)
+        data = {"input": user_query, "books": bookStringList, "isbn_list": isbnlist}
+        final_rawstring = requests.post(url, json=data)
+        return final_rawstring
 
 
 def generate_meta_search_sentence(book_list, user_query):
@@ -153,17 +215,26 @@ def interact_opensourceGeneration(
 
         if title != None:
             search_result = similar_booksearch(title, webinput)
-            passed_books = evaluate_books(search_result)
+            passed_books = evaluate_books(search_result, webinput)
             generated_sentences = generate_recommendation_sentence(
-                passed_books, input_query
+                passed_books, input_query, langchoice
             )
             weboutput_queue.put(generated_sentences)
         elif author != None:
-            author_search(author, webinput)
+            search_result = author_search(author, webinput)
+            generated_sentences = generate_meta_search_sentence(search_result, webinput)
+            weboutput_queue.put(generated_sentences)
         elif publisher != None:
-            publisher_search(publisher, webinput)
+            search_result = publisher_search(publisher, webinput)
+            generated_sentences = generate_meta_search_sentence(search_result, webinput)
+            weboutput_queue.put(generated_sentences)
         else:
-            keyword_search(webinput)
+            search_result = keyword_search(webinput)
+            passed_books = evaluate_books(search_result, webinput)
+            generated_sentences = generate_recommendation_sentence(
+                passed_books, input_query, langchoice
+            )
+            weboutput_queue.put(generated_sentences)
         # region mongodb
         mongodoc = {
             "user_id": user_id,

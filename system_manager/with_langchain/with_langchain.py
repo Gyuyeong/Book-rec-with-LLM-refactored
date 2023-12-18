@@ -195,55 +195,34 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
 
             result = self.filter_recommended_books(result)
 
-            if config["enable_simultaneous_evaluation"]:
-                bookresultQueue = queue.Queue()
+            bookresultQueue = queue.Queue()
 
-                def append_list_thread(userquery: str, bookinfo):
-                    nonlocal bookresultQueue
-                    if isbookPass(userquery, bookinfo):
-                        bookresultQueue.put(bookinfo)
-                    return
+            def book_pass_thread(userquery: str, bookinfo):
+                nonlocal bookresultQueue
+                if isbookPass(userquery, bookinfo):
+                    bookresultQueue.put(bookinfo)
+                return
 
-                threadlist = []
-                for book in result:
-                    t = threading.Thread(
-                        target=append_list_thread, args=(input_query, book)
-                    )
-                    threadlist.append(t)
-                    t.start()
+            threadlist = []
+            for book in result:
+                t = threading.Thread(target=book_pass_thread, args=(input_query, book))
+                threadlist.append(t)
+                t.start()
 
-                for t in threadlist:
-                    t.join()
+            for t in threadlist:
+                t.join()
 
-                while not bookresultQueue.empty():
-                    book = bookresultQueue.get()
-                    recommendList.append(book)
-                    bookList.append(
-                        {
-                            "author": book.author,
-                            "publisher": book.publisher,
-                            "title": book.title,
-                            "isbn": book.isbn,
-                        }
-                    )
-            else:
-                while len(recommendList) < num and count < len(
-                    result
-                ):  # 총 num개 찾을때까지 PF...
-                    if isbookPass(input_query, result[count]):
-                        recommendList.append(result[count])
-                        bookList.append(
-                            {
-                                "author": result[count].author,
-                                "publisher": result[count].publisher,
-                                "title": result[count].title,
-                                "isbn": result[count].isbn,
-                            }
-                        )
-                        # print(result[count])
-                    count += 1
-            print(f"\n{recommended_isbn}")
-            print(f"\neval done in thread{threading.get_ident()}")
+            while not bookresultQueue.empty():
+                book = bookresultQueue.get()
+                recommendList.append(book)
+                bookList.append(
+                    {
+                        "author": book.author,
+                        "publisher": book.publisher,
+                        "title": book.title,
+                        "isbn": book.isbn,
+                    }
+                )
 
             # 최종 출력을 위한 설명 만들기
             if len(recommendList) >= num:

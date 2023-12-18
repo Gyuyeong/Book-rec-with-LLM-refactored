@@ -77,7 +77,7 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 
-@app.route("/generate", methods=["POST"])
+@app.route("/generate/intention", methods=["POST"])
 def generate():
     data = request.json
     return generate_intention(data["input"])

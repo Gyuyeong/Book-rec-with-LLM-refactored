@@ -52,7 +52,11 @@ class ElasticSearchBM25Retriever:
         from elasticsearch import Elasticsearch
 
         # Create an Elasticsearch client instance
-        es = Elasticsearch(elasticsearch_url)
+        es = Elasticsearch(
+            ["https://115.71.239.131:9200"],
+            basic_auth=("elastic", "HWH1rJdFReoOA8i-NPiy"),
+            verify_certs=False,
+        )
 
         # Define the index settings and mappings
         settings = {
@@ -130,7 +134,7 @@ class ElasticSearchBM25Retriever:
                 r["_source"]["isbn"],
                 np.array(r["_source"]["tensor"]),
             )
-            docs.append(docs)
+            docs.append(bd)
 
         return docs
 
@@ -235,6 +239,6 @@ class ElasticSearchBM25Retriever:
                 r["_source"]["publisher"],
                 r["_source"]["isbn"],
             )
-            docs.append(docs)
+            docs.append(bd)
 
         return docs
