@@ -21,8 +21,6 @@ from utils.translation import translate_text
 # modified langchain.chat_models ChatOpenAI
 from system_manager.with_langchain.modifiedLangchainClass.openai import ChatOpenAI
 
-# es=Elasticsearch([{'host':'localhost','port':9200}])
-# es.sql.query(body={'query': 'select * from global_res_todos_acco...'})
 from langchain import LLMChain
 
 
@@ -32,7 +30,6 @@ from langchain.agents import initialize_agent
 from langchain.agents import ZeroShotAgent, Tool, AgentExecutor
 
 from langchain.memory import ConversationBufferMemory
-from langchain.memory import ConversationBufferWindowMemory
 
 import queue
 import logging
@@ -73,7 +70,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
 
     print("start interact!")
 
-    # region setting&init
+    # region setting
     with open("config.json", "r", encoding="UTF-8") as f:
         config = json.load(f)
     # region mongodb setting
@@ -91,6 +88,10 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
         config["elasticsearch_index_name"],
     )
 
+    # endregion
+    # region tool definition
+
+    # tool that performs meta search
     class booksearch_Tool(BaseTool):
         name = "booksearch"
         description = (
@@ -104,7 +105,6 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
             "The format for the Final Answer should be (number) title : book's title, author :  book's author, pubisher :  book's publisher. "
         )
 
-        # without any format
         def _run(self, query: str):
             print("\nbook_search")
             if "author: " in query:
@@ -145,6 +145,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
         def _arun(self, query: str):
             raise NotImplementedError("This tool does not support async")
 
+    # tool that performs query search
     class elastic_Tool(BaseTool):
         name = "elastic"
         default_num = config["default_number_of_books_to_return"]
@@ -157,6 +158,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
             "Input may include the year."
         )
 
+        # 파파고 번역을 위해 특수문자 제거
         def extract_variables(self, input_string: str):
             input_string = input_string.replace('"', "")
             variables_list = input_string.strip("()\n").split(", ")
@@ -164,6 +166,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
             num = int(variables_list[1])
             return name, num
 
+        # 이미 추천된 도서를 배제
         def filter_recommended_books(self, result):
             filtered_result = []
             for book in result:
@@ -191,11 +194,13 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
             bookList.clear()
             count = 0
 
+            # 유저 쿼리를 번역해서 검색
             result = retriever.search_with_query(ko_translated_input)
             if config["filter_out_reccommended_books"]:
                 result = self.filter_recommended_books(result)
 
             if config["use_gpt_api_for_eval"]:
+                # 쓰레드 생성해서 동시에 평가
                 bookresultQueue = queue.Queue()
 
                 def book_pass_thread(userquery: str, bookinfo):
@@ -230,6 +235,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
                 url = config["evaluation_generation_url"]
                 recommendList = list()
                 for book in result:
+                    # make json for model request
                     fullstring = (
                         f"QUERY: {{user_query}}, INFO: "
                         + f"{{title='{book.title}' introduction='{book.introduction}' author='{book.author}' publisher='{book.publisher}' isbn={book.isbn}}}"
@@ -247,6 +253,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
                             }
                         )
             # 최종 출력을 위한 설명 만들기
+            # 추천 결과가 유저가 요청한 추천수보다 많은 경우 or 유저가 따로 요청하지 않은 경우
             if len(recommendList) >= num or num == 3:
                 reallength = min(len(recommendList), num)
                 for i in range(reallength):
