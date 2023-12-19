@@ -4,9 +4,8 @@ sys.path.append(".")
 from flask import Flask, render_template, request, session
 from system_manager.without_langchain import interact_opensourceGeneration
 
-# from system_manager.with_langchain.with_langchain import interact_fullOpenAI
+from system_manager.with_langchain.with_langchain import interact_fullOpenAI
 
-# from opensourceLLMGenerate import interact_opensourceGeneration
 import threading
 import queue
 import uuid
@@ -47,16 +46,16 @@ def home():
 
     # start server-side loop in separate thread
 
-    # if config["modelchoice"] == "openai":
-    #     server_thread = threading.Thread(
-    #         target=interact_fullOpenAI,
-    #         args=(
-    #             input_queue_dict[user_id],
-    #             output_queue_dict[user_id],
-    #             langchoice_queue_dict[user_id],
-    #             user_id,
-    #         ),
-    #     )
+    if config["modelchoice"] == "openai":
+        server_thread = threading.Thread(
+            target=interact_fullOpenAI,
+            args=(
+                input_queue_dict[user_id],
+                output_queue_dict[user_id],
+                langchoice_queue_dict[user_id],
+                user_id,
+            ),
+        )
     if config["modelchoice"] == "opensourceLLM":
         server_thread = threading.Thread(
             target=interact_opensourceGeneration,
