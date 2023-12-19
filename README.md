@@ -1,2 +1,2 @@
-# Book-rec-with-LLM-refactored
- refactoring
+# Book rec with LLM
+book recommendation system for KnP
