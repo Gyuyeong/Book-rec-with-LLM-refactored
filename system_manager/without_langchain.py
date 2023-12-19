@@ -192,9 +192,9 @@ def generate_meta_search_sentence(book_list, user_query, langchoice):
         for book in book_list:
             returnstring += (
                 "<br>"
-                + f"제목 : {book.title} "
-                + f"작가 : {book.author} "
-                + f"출판사 : {book.publisher} "
+                + f"제목 : {book.title} <br>"
+                + f"작가 : {book.author} <br>"
+                + f"출판사 : {book.publisher} <br>"
                 + "<br>"
                 + '<br><a href="https://www.booksonkorea.com/product/'
                 + str(book.isbn)
@@ -205,9 +205,9 @@ def generate_meta_search_sentence(book_list, user_query, langchoice):
         for book in book_list:
             returnstring += (
                 "<br>"
-                + f"Title : {book.title} "
-                + f"Author : {book.author} "
-                + f"Publisher : {book.publisher} "
+                + f"Title : {book.title} <br>"
+                + f"Author : {book.author} <br>"
+                + f"Publisher : {book.publisher} <br>"
                 + "<br>"
                 + '<br><a href="https://www.booksonkorea.com/product/'
                 + str(book.isbn)
