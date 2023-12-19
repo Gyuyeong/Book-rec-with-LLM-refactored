@@ -257,6 +257,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
             if len(recommendList) >= num or num == 3:
                 reallength = min(len(recommendList), num)
                 for i in range(reallength):
+                    # 이미 추천한 도서목록
                     recommended_isbn.append(
                         {
                             "turnNumber": chatturn,
@@ -277,6 +278,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
                             recommendList[i],
                             input_query,
                         )
+                        # 웹 출력용 html 결과생성
                         result += (
                             completion["choices"][0]["message"]["content"]
                             + '<br><a href="https://www.booksonkorea.com/product/'
@@ -288,7 +290,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
                     url = config["final_generation_url"]
                     bookStringList = list()
                     isbnlist = list()
-                    for book in recommendList:
+                    for book in recommendList[0:reallength]:
                         fullstring = (
                             "book: "
                             + f"{{title=[{book.title}], author=[{book.author}], introduction=[{book.introduction}]}}"
@@ -301,6 +303,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
                         "isbn_list": isbnlist,
                         "lang": langchoice,
                     }
+                    # 모델쪽에서 웹 출력용 html 결과반환
                     web_output = requests.post(url, json=data).text
 
                 logger.info(f"web output set to {web_output}")
@@ -317,11 +320,13 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
 
     tools = [elastic_Tool(), cannot_Tool(), booksearch_Tool()]
 
+    # general description of agent
     prefix = """
     Have a conversation with a human, answering the following questions as best you can. 
     User may want some book recommendations, book search, or daily conversation. 
     You have access to the following tools:
     """
+    # specific description of agent with chat history. agent generates from here
     suffix = """
     For daily conversation, please give user the Final Answer right away without using any tools. 
     It should be remembered that the current year is 2023. 
@@ -364,6 +369,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
     # endregion
 
     while 1:
+        # get input from queue
         webinput = webinput_queue.get()
         langchoice = langchoice_queue.get()
         input_query = webinput
