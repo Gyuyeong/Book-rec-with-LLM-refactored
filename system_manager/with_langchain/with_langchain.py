@@ -88,7 +88,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
             elasticsearch_url,
             verify_certs=False,
         ),
-        "600k",
+        config["elasticsearch_index_name"],
     )
 
     class booksearch_Tool(BaseTool):

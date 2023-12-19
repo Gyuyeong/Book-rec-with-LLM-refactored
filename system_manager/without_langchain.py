@@ -30,12 +30,13 @@ with open("config.json", "r", encoding="UTF-8") as f:
     config = json.load(f)
 
 elasticsearch_url = config["elasticsearch_url"]
+print(elasticsearch_url)
 retriever = ElasticSearchBM25Retriever(
     elasticsearch.Elasticsearch(
         elasticsearch_url,
         verify_certs=False,
     ),
-    "600k",
+    config["elasticsearch_index_name"],
 )
 
 
@@ -77,8 +78,8 @@ def similar_booksearch(bookname, user_query) -> list:
     return_result = list()
     if len(title_result) == 0:
         return_result = keyword_search(user_query)
-    elif len(title_result) == 1:
-        return_result = retriever.knn_only_search(title_result[0].tensor)
+    else:
+        return_result = retriever.knn_only_search(title_result[0].tensor, bookname)
     return return_result
 
 
@@ -129,7 +130,7 @@ def evaluate_books(book_list, user_query) -> list:
         returnlist = list()
         while not bookresultQueue.empty():
             returnlist.append(bookresultQueue.get())
-        return returnlist
+        return returnlist[0 : config["default_number_of_books_to_return"]]
 
     else:
         url = config["evaluation_generation_url"]
@@ -151,7 +152,7 @@ def generate_recommendation_sentence(book_list, user_query, langchoice):
         langchoice_Reference = {"en": " Answer in English.", "ko": " 한국어로 답변해줘."}
         from LLMs.GPT_API_utils.Generate_Recommendation import generate_recommendation
 
-        result = str
+        result = str()
         for book in book_list:
             result += f"[{book.title}] ({book.author})<br>"
             completion = generate_recommendation(
@@ -186,7 +187,7 @@ def generate_recommendation_sentence(book_list, user_query, langchoice):
 
 
 def generate_meta_search_sentence(book_list, user_query, langchoice):
-    returnstring = str
+    returnstring = str()
     if langchoice == "ko":
         returnstring = config["meta_search_canned_text_ko"]
         for book in book_list:
@@ -249,7 +250,7 @@ def interact_opensourceGeneration(
         webinput = translate_text("ko", webinput)
 
         title, author, publisher, keywordlist, is_else = getUserIntention(webinput)
-        generated_sentences = str
+        generated_sentences = str()
         if is_else:
             weboutput_queue.put("Cannot handle intention")
             print("in else")

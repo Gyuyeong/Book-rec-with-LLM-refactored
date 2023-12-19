@@ -81,7 +81,7 @@ def generate_recommendation(
     model=model,
     tokenizer=tokenizer,
 ):
-    outstring = str
+    outstring = str()
     generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
     generation_args = dict(

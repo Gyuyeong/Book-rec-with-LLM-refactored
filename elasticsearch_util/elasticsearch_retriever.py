@@ -5,6 +5,9 @@ import elasticsearch
 from typing import Type
 import numpy as np
 
+with open("config.json", "r", encoding="UTF-8") as f:
+    config = json.load(f)
+
 
 class Bookdata:
     def __init__(self, title, introduction, author, publisher, isbn, tensor):
@@ -14,6 +17,9 @@ class Bookdata:
         self.introduction = introduction
         self.isbn = isbn
         self.tensor = tensor
+
+    def __str__(self):
+        return f"title : {self.title}, author : {self.author}, introduction : {self.introduction}"
 
 
 class ElasticSearchBM25Retriever:
@@ -156,10 +162,10 @@ class ElasticSearchBM25Retriever:
             )
             docs.append(bd)
 
-        print("\nfrom_book--------------------------------------------debug")
-        print(docs[0:2])
+        print("\nfrom author book--------------------------------------------debug")
+        print(docs)
         print("--------------------------------------------debug\n\n")
-        return docs[0:2]
+        return docs[0 : config["default_number_of_books_to_return"]]
 
     def search_with_title(self, query: str) -> list[Bookdata]:
         query_dict: dict()
@@ -181,10 +187,10 @@ class ElasticSearchBM25Retriever:
             )
             docs.append(bd)
 
-        print("\nfrom_book--------------------------------------------debug")
-        print(docs[0:2])
+        print("\nfrom title book--------------------------------------------debug")
+        print(docs)
         print("--------------------------------------------debug\n\n")
-        return docs[0:2]
+        return docs[0 : config["default_number_of_books_to_return"]]
 
     def search_with_publisher(self, query: str) -> list[Bookdata]:
         query_dict: dict()
@@ -206,12 +212,14 @@ class ElasticSearchBM25Retriever:
             )
             docs.append(bd)
 
-        print("\nfrom_book--------------------------------------------debug")
-        print(docs[0:2])
+        print("\nfrom pub book--------------------------------------------debug")
+        print(docs)
         print("--------------------------------------------debug\n\n")
-        return docs[0:2]
+        return docs[0 : config["default_number_of_books_to_return"]]
 
-    def knn_only_search(self, tensor: np.ndarray) -> list[Bookdata]:
+    def knn_only_search(
+        self, tensor: np.ndarray, excluded_title: str
+    ) -> list[Bookdata]:
         query_dict = {
             "knn": {
                 "field": "embedding",
@@ -235,6 +243,11 @@ class ElasticSearchBM25Retriever:
                 r["_source"]["isbn"],
                 np.array(r["_source"]["embedding"]),
             )
-            docs.append(bd)
-
+            if bd.title != excluded_title:
+                docs.append(bd)
+        print("\nfrom knn only book--------------------------------------------debug")
+        print(docs)
+        for book in docs:
+            print(book.title)
+        print("--------------------------------------------debug\n\n")
         return docs

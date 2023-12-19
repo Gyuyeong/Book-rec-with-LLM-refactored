@@ -81,7 +81,7 @@ def generate_recommendation(
     model=model,
     tokenizer=tokenizer,
 ):
-    outstring = str
+    outstring = str()
     generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
     generation_args = dict(
@@ -111,7 +111,7 @@ def generate_recommendation(
     ]
     list_result = generator(list_book, **generation_args)
 
-    pattern = r"title:\s*\[([^]]+)\],\s*author:\s*\[([^]]+)\]"
+    pattern = r"title\s*=\s*\[([^\]]+)\],\s*author\s*=\s*\[([^\]]+)\]"
 
     for book_prompt, result, isbn in zip(list_book, list_result, isbn_list):
         title_and_author_result = re.findall(pattern, book_prompt)
@@ -137,7 +137,7 @@ def generate_recommendation(
         outstring += (
             final_result
             + '<br><a href="https://www.booksonkorea.com/product/'
-            + isbn
+            + str(isbn)
             + '" target="_blank" class="quickViewButton">Quick View</a><br><br>'
         )
     return outstring
@@ -200,7 +200,7 @@ app = Flask(__name__)
 
 
 @app.route("/generate/final", methods=["POST"])
-def generate():
+def generate_final():
     data = request.json
     return generate_recommendation(
         data["input"], data["books"], data["lang"], data["isbn_list"]
@@ -208,16 +208,16 @@ def generate():
 
 
 @app.route("/generate/intention", methods=["POST"])
-def generate():
+def generate_intention():
     data = request.json
     return determine_intention(data["input"])
 
 
 @app.route("/generate/evaluation", methods=["POST"])
-def generate():
+def generate_eval():
     data = request.json
     return generate_evaluation(data["fullstring"])
 
 
 if __name__ == "__main__":
-    app.run(port=5002)
+    app.run(port=5001)
