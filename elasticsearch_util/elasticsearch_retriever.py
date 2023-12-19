@@ -2,7 +2,7 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 import json
 import elasticsearch
-from typing import Type
+from typing import Type, List
 import numpy as np
 
 with open("config.json", "r", encoding="UTF-8") as f:
@@ -86,7 +86,7 @@ class ElasticSearchBM25Retriever:
         es.indices.create(index=index_name, mappings=mappings, settings=settings)
         return cls(es, index_name)
 
-    def search_with_query(self, query: str) -> list[Bookdata]:
+    def search_with_query(self, query: str) -> List[Bookdata]:
         with open("config.json", encoding="UTF-8") as f:
             config = json.load(f)
         n = config["elasticsearch_result_count"]
@@ -143,7 +143,7 @@ class ElasticSearchBM25Retriever:
 
         return docs
 
-    def search_with_author(self, query: str) -> list[Bookdata]:
+    def search_with_author(self, query: str) -> List[Bookdata]:
         query_dict: dict()
         query_dict = {"query": {"term": {"author.keyword": query}}}
         res = self.client.search(
@@ -167,7 +167,7 @@ class ElasticSearchBM25Retriever:
         print("--------------------------------------------debug\n\n")
         return docs[0 : config["default_number_of_books_to_return"]]
 
-    def search_with_title(self, query: str) -> list[Bookdata]:
+    def search_with_title(self, query: str) -> List[Bookdata]:
         query_dict: dict()
         query_dict = {"query": {"term": {"title.keyword": {"value": query}}}}
 
@@ -192,7 +192,7 @@ class ElasticSearchBM25Retriever:
         print("--------------------------------------------debug\n\n")
         return docs[0 : config["default_number_of_books_to_return"]]
 
-    def search_with_publisher(self, query: str) -> list[Bookdata]:
+    def search_with_publisher(self, query: str) -> List[Bookdata]:
         query_dict: dict()
         query_dict = {"query": {"term": {"publisher.keyword": query}}}
 
@@ -219,7 +219,7 @@ class ElasticSearchBM25Retriever:
 
     def knn_only_search(
         self, tensor: np.ndarray, excluded_title: str
-    ) -> list[Bookdata]:
+    ) -> List[Bookdata]:
         query_dict = {
             "knn": {
                 "field": "embedding",

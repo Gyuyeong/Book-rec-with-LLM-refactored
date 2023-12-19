@@ -12,6 +12,7 @@ import elasticsearch
 import threading
 import urllib
 import requests
+from typing import List
 
 # es=Elasticsearch([{'host':'localhost','port':9200}])
 # es.sql.query(body={'query': 'select * from global_res_todos_acco...'})
@@ -73,7 +74,7 @@ def getUserIntention(user_input):
     return title, author, publisher, keyword_list, is_else
 
 
-def similar_booksearch(bookname, user_query) -> list:
+def similar_booksearch(bookname, user_query) -> List:
     title_result = retriever.search_with_title(bookname)
     return_result = list()
     if len(title_result) == 0:
@@ -101,12 +102,12 @@ def publisher_search(publisher_name, user_query):
     return publisher_result, did_keyword_search
 
 
-def keyword_search(user_query) -> list:
+def keyword_search(user_query) -> List:
     result = retriever.search_with_query(user_query)
     return result
 
 
-def evaluate_books(book_list, user_query) -> list:
+def evaluate_books(book_list, user_query) -> List:
     if config["use_gpt_api_for_eval"]:
         from LLMs.GPT_API_utils.Recommendation_Evaluation import isbookPass
 

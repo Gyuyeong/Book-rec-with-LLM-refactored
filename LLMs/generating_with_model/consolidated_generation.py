@@ -101,6 +101,7 @@ def generate_recommendation(
         mapped_prompt, ""
     )  # response to query
     print(result)
+    result = translate_text(target_lang, result)
     outstring = result + "<br>"
     # book dataset of book data
     list_book = [
