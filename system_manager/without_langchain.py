@@ -43,7 +43,7 @@ def getUserIntention(user_input):
     url = config["intention_generation_url"]
     data = {"input": user_input}
     intention_rawstring = requests.post(url, json=data)
-    start = intention_rawstring.text.find("단서들:[") + len("단서들:[")
+    start = intention_rawstring.text.find("단서들: [") + len("단서들: [")
     end = intention_rawstring.text.find("]", start)
     clue_str = intention_rawstring.text[start:end]
     clues_list = clue_str.split(", ")
@@ -82,18 +82,22 @@ def similar_booksearch(bookname, user_query) -> list:
     return return_result
 
 
-def author_search(author_name, user_query) -> list:
+def author_search(author_name, user_query):
     author_result = retriever.search_with_author(author_name)
+    did_keyword_search = False
     if len(author_result) == 0:
         author_result = keyword_search(user_query)
-    return author_result
+        did_keyword_search = True
+    return author_result, did_keyword_search
 
 
-def publisher_search(publisher_name, user_query) -> list:
+def publisher_search(publisher_name, user_query):
     publisher_result = retriever.search_with_publisher(publisher_name)
+    did_keyword_search = False
     if len(publisher_result) == 0:
         publisher_result = keyword_search(user_query)
-    return publisher_result
+        did_keyword_search = True
+    return publisher_result, did_keyword_search
 
 
 def keyword_search(user_query) -> list:
@@ -182,6 +186,7 @@ def generate_recommendation_sentence(book_list, user_query, langchoice):
 
 
 def generate_meta_search_sentence(book_list, user_query, langchoice):
+    returnstring = str
     if langchoice == "ko":
         returnstring = config["meta_search_canned_text_ko"]
         for book in book_list:
@@ -208,7 +213,7 @@ def generate_meta_search_sentence(book_list, user_query, langchoice):
                 + str(book.isbn)
                 + '" target="_blank" class="quickViewButton">Quick View</a><br><br>'
             )
-    return
+    return returnstring
 
 
 def interact_opensourceGeneration(
@@ -252,26 +257,41 @@ def interact_opensourceGeneration(
             search_result = similar_booksearch(title, webinput)
             passed_books = evaluate_books(search_result, webinput)
             generated_sentences = generate_recommendation_sentence(
-                passed_books, input_query, langchoice
+                passed_books, webinput, langchoice
             )
             weboutput_queue.put(generated_sentences)
         elif author != None:
-            search_result = author_search(author, webinput)
-            generated_sentences = generate_meta_search_sentence(
-                search_result, webinput, langchoice
-            )
-            weboutput_queue.put(generated_sentences)
+            search_result, did_keyword_search = author_search(author, webinput)
+            print(search_result, did_keyword_search)
+            if did_keyword_search:
+                passed_books = evaluate_books(search_result, webinput)
+                generated_sentences = generate_recommendation_sentence(
+                    passed_books, webinput, langchoice
+                )
+                weboutput_queue.put(generated_sentences)
+            else:
+                generated_sentences = generate_meta_search_sentence(
+                    search_result, webinput, langchoice
+                )
+                weboutput_queue.put(generated_sentences)
         elif publisher != None:
-            search_result = publisher_search(publisher, webinput)
-            generated_sentences = generate_meta_search_sentence(
-                search_result, webinput, langchoice
-            )
-            weboutput_queue.put(generated_sentences)
+            search_result, did_keyword_search = publisher_search(publisher, webinput)
+            if did_keyword_search:
+                passed_books = evaluate_books(search_result, webinput)
+                generated_sentences = generate_recommendation_sentence(
+                    passed_books, webinput, langchoice
+                )
+                weboutput_queue.put(generated_sentences)
+            else:
+                generated_sentences = generate_meta_search_sentence(
+                    search_result, webinput, langchoice
+                )
+                weboutput_queue.put(generated_sentences)
         else:
             search_result = keyword_search(webinput)
             passed_books = evaluate_books(search_result, webinput)
             generated_sentences = generate_recommendation_sentence(
-                passed_books, input_query, langchoice
+                passed_books, webinput, langchoice
             )
             weboutput_queue.put(generated_sentences)
         print(generated_sentences)

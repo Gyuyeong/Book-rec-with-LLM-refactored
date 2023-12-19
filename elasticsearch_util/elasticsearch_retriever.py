@@ -139,24 +139,22 @@ class ElasticSearchBM25Retriever:
 
     def search_with_author(self, query: str) -> list[Bookdata]:
         query_dict: dict()
-        query_dict = {"query": {"term": {"author.keyword": {"value": query}}}}
-
+        query_dict = {"query": {"term": {"author.keyword": query}}}
         res = self.client.search(
             index=self.index_name, body=query_dict, request_timeout=1200
         )
         docs = []
 
         for r in res["hits"]["hits"]:
-            docs.append(
-                bd=Bookdata(
-                    r["_source"]["title"],
-                    r["_source"]["introduction"],
-                    r["_source"]["author"],
-                    r["_source"]["publisher"],
-                    r["_source"]["isbn"],
-                    np.array(r["_source"]["tensor"]),
-                )
+            bd = Bookdata(
+                r["_source"]["title"],
+                r["_source"]["introduction"],
+                r["_source"]["author"],
+                r["_source"]["publisher"],
+                r["_source"]["isbn"],
+                np.array(r["_source"]["embedding"]),
             )
+            docs.append(bd)
 
         print("\nfrom_book--------------------------------------------debug")
         print(docs[0:2])
@@ -173,16 +171,15 @@ class ElasticSearchBM25Retriever:
         docs = []
 
         for r in res["hits"]["hits"]:
-            docs.append(
-                bd=Bookdata(
-                    r["_source"]["title"],
-                    r["_source"]["introduction"],
-                    r["_source"]["author"],
-                    r["_source"]["publisher"],
-                    r["_source"]["isbn"],
-                    np.array(r["_source"]["tensor"]),
-                )
+            bd = Bookdata(
+                r["_source"]["title"],
+                r["_source"]["introduction"],
+                r["_source"]["author"],
+                r["_source"]["publisher"],
+                r["_source"]["isbn"],
+                np.array(r["_source"]["embedding"]),
             )
+            docs.append(bd)
 
         print("\nfrom_book--------------------------------------------debug")
         print(docs[0:2])
@@ -191,7 +188,7 @@ class ElasticSearchBM25Retriever:
 
     def search_with_publisher(self, query: str) -> list[Bookdata]:
         query_dict: dict()
-        query_dict = {"query": {"term": {"publisher.keyword": {"value": query}}}}
+        query_dict = {"query": {"term": {"publisher.keyword": query}}}
 
         res = self.client.search(
             index=self.index_name, body=query_dict, request_timeout=1200
@@ -199,16 +196,15 @@ class ElasticSearchBM25Retriever:
         docs = []
 
         for r in res["hits"]["hits"]:
-            docs.append(
-                bd=Bookdata(
-                    r["_source"]["title"],
-                    r["_source"]["introduction"],
-                    r["_source"]["author"],
-                    r["_source"]["publisher"],
-                    r["_source"]["isbn"],
-                    np.array(r["_source"]["tensor"]),
-                )
+            bd = Bookdata(
+                r["_source"]["title"],
+                r["_source"]["introduction"],
+                r["_source"]["author"],
+                r["_source"]["publisher"],
+                r["_source"]["isbn"],
+                np.array(r["_source"]["embedding"]),
             )
+            docs.append(bd)
 
         print("\nfrom_book--------------------------------------------debug")
         print(docs[0:2])
@@ -237,6 +233,7 @@ class ElasticSearchBM25Retriever:
                 r["_source"]["author"],
                 r["_source"]["publisher"],
                 r["_source"]["isbn"],
+                np.array(r["_source"]["embedding"]),
             )
             docs.append(bd)
 
