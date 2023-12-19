@@ -139,7 +139,7 @@ def evaluate_books(book_list, user_query) -> list:
             evaluate_rawstring = requests.post(url, json=data).text
             if evaluate_rawstring == "Pass":
                 passlist.append(book)
-        return passlist
+        return passlist[0 : config["default_number_of_books_to_return"]]
 
 
 def generate_recommendation_sentence(book_list, user_query, langchoice):
