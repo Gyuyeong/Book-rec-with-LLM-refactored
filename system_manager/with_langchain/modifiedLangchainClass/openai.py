@@ -40,7 +40,6 @@ from langchain.schema import (
     SystemMessage,
 )
 from langchain.utils import get_from_dict_or_env
-import fullOpenAI
 
 if TYPE_CHECKING:
     import tiktoken
@@ -322,7 +321,8 @@ class ChatOpenAI(BaseChatModel):
                     if word == "Action:" and i + 1 < len(words):
                         words[i + 1] = words[i + 1].lower()
                 d["choices"][0]["message"]["content"] = " ".join(words)
-                for toolname in fullOpenAI.toolList:
+                toolList = ["booksearch", "cannot", "elastic"]
+                for toolname in toolList:
                     if (
                         toolname in d["choices"][0]["message"]["content"]
                         and not "Action: " + toolname

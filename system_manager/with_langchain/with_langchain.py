@@ -15,7 +15,7 @@ import openai
 import elasticsearch
 import threading
 import urllib
-
+import requests
 from utils.translation import translate_text
 
 # modified langchain.chat_models ChatOpenAI
@@ -74,7 +74,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
     print("start interact!")
 
     # region setting&init
-    with open("config.json") as f:
+    with open("config.json", "r", encoding="UTF-8") as f:
         config = json.load(f)
     # region mongodb setting
     client = MongoClient(config["mongodb_uri"], server_api=ServerApi("1"))
@@ -180,7 +180,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
         # I must give Final Answer base
         def _run(self, query: str):
             elastic_input, num = self.extract_variables(query)
-            elastic_input = translate_text("ko", elastic_input)
+            ko_translated_input = translate_text("ko", elastic_input)
             nonlocal input_query
             nonlocal web_output
             nonlocal langchoice
@@ -191,42 +191,65 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
             bookList.clear()
             count = 0
 
-            result = retriever.search_with_query(elastic_input)
+            result = retriever.search_with_query(ko_translated_input)
+            if config["filter_out_reccommended_books"]:
+                result = self.filter_recommended_books(result)
 
-            result = self.filter_recommended_books(result)
+            if config["use_gpt_api_for_eval"]:
+                bookresultQueue = queue.Queue()
 
-            bookresultQueue = queue.Queue()
+                def book_pass_thread(userquery: str, bookinfo):
+                    nonlocal bookresultQueue
+                    if isbookPass(userquery, bookinfo):
+                        bookresultQueue.put(bookinfo)
+                    return
 
-            def book_pass_thread(userquery: str, bookinfo):
-                nonlocal bookresultQueue
-                if isbookPass(userquery, bookinfo):
-                    bookresultQueue.put(bookinfo)
-                return
+                threadlist = []
+                for book in result:
+                    t = threading.Thread(
+                        target=book_pass_thread, args=(input_query, book)
+                    )
+                    threadlist.append(t)
+                    t.start()
 
-            threadlist = []
-            for book in result:
-                t = threading.Thread(target=book_pass_thread, args=(input_query, book))
-                threadlist.append(t)
-                t.start()
+                for t in threadlist:
+                    t.join()
 
-            for t in threadlist:
-                t.join()
-
-            while not bookresultQueue.empty():
-                book = bookresultQueue.get()
-                recommendList.append(book)
-                bookList.append(
-                    {
-                        "author": book.author,
-                        "publisher": book.publisher,
-                        "title": book.title,
-                        "isbn": book.isbn,
-                    }
-                )
-
+                while not bookresultQueue.empty():
+                    book = bookresultQueue.get()
+                    recommendList.append(book)
+                    bookList.append(
+                        {
+                            "author": book.author,
+                            "publisher": book.publisher,
+                            "title": book.title,
+                            "isbn": book.isbn,
+                        }
+                    )
+            else:
+                url = config["evaluation_generation_url"]
+                recommendList = list()
+                for book in result:
+                    fullstring = (
+                        f"QUERY: {{user_query}}, INFO: "
+                        + f"{{title='{book.title}' introduction='{book.introduction}' author='{book.author}' publisher='{book.publisher}' isbn={book.isbn}}}"
+                    )
+                    data = {"fullstring": fullstring}
+                    evaluate_rawstring = requests.post(url, json=data).text
+                    if evaluate_rawstring == "Pass":
+                        recommendList.append(book)
+                        bookList.append(
+                            {
+                                "author": book.author,
+                                "publisher": book.publisher,
+                                "title": book.title,
+                                "isbn": book.isbn,
+                            }
+                        )
             # 최종 출력을 위한 설명 만들기
-            if len(recommendList) >= num:
-                for i in range(num):
+            if len(recommendList) >= num or num == 3:
+                reallength = min(len(recommendList), num)
+                for i in range(reallength):
                     recommended_isbn.append(
                         {
                             "turnNumber": chatturn,
@@ -236,19 +259,43 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
                             "isbn": recommendList[i].isbn,
                         }
                     )
-                result = ""
-                for i in range(num):
-                    result += f"[{bookList[i]['title']}] ({bookList[i]['author']})<br>"
-                    completion = generate_recommendation(
-                        langchoice_Reference[langchoice], recommendList[i], input_query
-                    )
-                    result += (
-                        completion["choices"][0]["message"]["content"]
-                        + '<br><a href="https://www.booksonkorea.com/product/'
-                        + str(recommendList[i].isbn)
-                        + '" target="_blank" class="quickViewButton">Quick View</a><br><br>'
-                    )
-                web_output = result
+                if config["use_gpt_api_for_final"]:
+                    result = ""
+                    for i in range(reallength):
+                        result += (
+                            f"[{bookList[i]['title']}] ({bookList[i]['author']})<br>"
+                        )
+                        completion = generate_recommendation(
+                            langchoice_Reference[langchoice],
+                            recommendList[i],
+                            input_query,
+                        )
+                        result += (
+                            completion["choices"][0]["message"]["content"]
+                            + '<br><a href="https://www.booksonkorea.com/product/'
+                            + str(recommendList[i].isbn)
+                            + '" target="_blank" class="quickViewButton">Quick View</a><br><br>'
+                        )
+                    web_output = result
+                else:
+                    url = config["final_generation_url"]
+                    bookStringList = list()
+                    isbnlist = list()
+                    for book in recommendList:
+                        fullstring = (
+                            "book: "
+                            + f"{{title=[{book.title}], author=[{book.author}], introduction=[{book.introduction}]}}"
+                        )
+                        bookStringList.append(fullstring)
+                        isbnlist.append(book.isbn)
+                    data = {
+                        "input": ko_translated_input,
+                        "books": bookStringList,
+                        "isbn_list": isbnlist,
+                        "lang": langchoice,
+                    }
+                    web_output = requests.post(url, json=data).text
+
                 logger.info(f"web output set to {web_output}")
                 return f"{bookList[0:num]}  "
             else:
