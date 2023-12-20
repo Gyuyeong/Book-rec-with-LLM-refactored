@@ -182,10 +182,10 @@ def generate_evaluation(user_input: str, model=model, tokenizer=tokenizer):
         num_beams=2,
         repetition_penalty=2.0,
         no_repeat_ngram_size=4,
-        max_new_tokens=1024,
+        max_new_tokens=512,
         eos_token_id=tokenizer.eos_token_id,
         do_sample=True,
-        top_p=0.5,
+        top_p=0.15,
         early_stopping=True,
     )
 
