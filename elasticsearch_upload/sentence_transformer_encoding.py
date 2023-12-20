@@ -82,26 +82,26 @@ if es.indices.exists(index=index_name):
 else:
     es.indices.create(index=index_name, body={"mappings": mapping, "settings": setting})
 
-    data = []
+data = []
 
-    def appendbulk(row):
-        targetstring = f"category: {row['category']}, author: {row['author']}, introduction: {row['introduction']}, title: {row['title']}"
-        embedding = model.encode(targetstring)
+def appendbulk(row):
+    targetstring = f"category: {row['category']}, author: {row['author']}, introduction: {row['introduction']}, title: {row['title']}"
+    embedding = model.encode(targetstring)
 
-        data.append({
-            "_index": index_name,
-            "_source": {
-                "author": row["author"],
-                "category": row["category"],
-                "introduction": row["introduction"],
-                "publisher": row["publisher"],
-                "title": row["title"],
-                "publish_date": row["publish_date"],
-                "isbn": row["isbn"],
-                "toc": row["toc"],
-                "embedding": embedding,
-            },
-        })
+    data.append({
+        "_index": index_name,
+        "_source": {
+            "author": row["author"],
+            "category": row["category"],
+            "introduction": row["introduction"],
+            "publisher": row["publisher"],
+            "title": row["title"],
+            "publish_date": row["publish_date"],
+            "isbn": row["isbn"],
+            "toc": row["toc"],
+            "embedding": embedding,
+        },
+    })
 
 
 with pd.read_csv(input_filename, chunksize=chunksize, encoding="utf-8") as reader:
