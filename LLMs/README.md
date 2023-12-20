@@ -378,3 +378,29 @@ training_args = TrainingArguments(
 |per_device_eval_batch_size|한번에 evaluation을 진행할 batch size|
 |load_best_model_at_end|True로 설정하면 가장 좋은 모델을 저장한다. 좋은 모델이라는 것은 training loss가 낮으면서 validation loss도 낮은 상태를 의미한다|
 |save_total_limit|너무 많은 checkpoint들이 저장되는 것을 방지하기 위해 마지막 몇 개의 checkpoint만 저장할 수 있다. load_best_model_at_end 까지 설정되어 있으면 best model도 포함해서 저장된다|
+
+## Train
+```
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    data_collator=data_collator,
+    train_dataset=train_dataset,
+    eval_dataset=evaluation_dataset
+)
+```
+Trainer에 학습할 `model`과 `training_args`, `data_collator`, `train_dataset`, `eval_dataset`을 넣어서 trainer instance를 만든다.
+
+`trainer.train()` 을 실행하면 학습이 된다.
+
+## Background 학습 방법
+
+터미널에 다음과 같이 입력한다.
+```
+nohup python consolidated_model_train.py > output.log &
+```
+모든 결과물을 `output.log`에 redirect 하고 `nohup`을 사용하면 시스템의 전원이 off돼도 학습이 멈추지 않는다. 도중에 진행 경과를 확인하기 위해서는 
+```
+cat output.log
+```
+를 해주면 된다.
