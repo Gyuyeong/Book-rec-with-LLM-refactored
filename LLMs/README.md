@@ -148,4 +148,16 @@ PROMPT_DICT ={
 2. 추천 도서 평가 모델
    
 3. 책 추천 멘트 및 사유 생성 모델
+```
+{
+    "prompt": "response_to_user: {input에 주어진 사용자 질의에 응답하는 문구를 생성해줘}",
+    "input": "입력 문장",
+    "completion": "추천 멘트\n\n"
+}
 
+{
+    "prompt": "book_recommendation: {input에 주어진 책 정보와 사용자 질의를 바탕으로 그 책을 추천한 사유를 생성해줘}",
+    "input": "user_query: {입력 문장}, book: {title: [[제목]], author: [[저자]], introduction: [[책 소개]]}",
+    "completion": "- [추천 사유]"
+}
+```
