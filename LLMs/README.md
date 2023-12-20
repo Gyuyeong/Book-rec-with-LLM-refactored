@@ -362,6 +362,7 @@ training_args = TrainingArguments(
 |overwrite_output_dir|새로 학습할 시 output_dir에 명시된 곳에 이미 모델이 있을 경우 덮어씌운다. **실수로 덮어씌우는 실수를 하지 않게 조심해야 한다.**|True|
 |num_train_epochs|전체 데이터를 학습하는 횟수. 100을 넘어가면서부터는 모델의 성능이 변한다는 느낌이 없음|100|
 |per_device_batch_size|학습 데이터 batch size. GPU의 메모리 용량에 맞춰서 설정해주면 된다|1|
+|gradient_accumulation_steps|gradient descent를 보류할 step의 수. 매 step마다 학습하는 것이 아닌 일정 step마다 하는 것이기에 메모리 절약에 도움된다. 가능하면 줄이는 것이 좋다|16|
 |save_steps|checkpoint를 저장하는 step interval. 10으로 설정하면 10step마다 model의 checkpoint가 생성되고, 각 모델을 사용할 수 있다.|10|
 |logging_steps|loss 와 learning rate 등 step 마다 변동하는 값은 기록하는 interval|10|
 |prediction_loss_only|prediction loss만 기록|True|
@@ -370,4 +371,10 @@ training_args = TrainingArguments(
 |lr_scheduler_type|학습을 하면서 점차 learning rate를 감소시키는 방식. Cosine이 가장 무난한 선택지로 보인다|"cosine"|
 |warmup_step|learning rate scheduler를 적용하기 전 기다리는 step의 수|5|
 
-그 외에 evaluation 데이터가 있다면 
+그 외에 evaluation 데이터가 있다면 다음 파라미터 사용을 고려해볼 수 있다
+|파라미터|설명|
+|---|---|
+|eval_steps|evaluation이 진행되는 step interval|
+|per_device_eval_batch_size|한번에 evaluation을 진행할 batch size|
+|load_best_model_at_end|True로 설정하면 가장 좋은 모델을 저장한다. 좋은 모델이라는 것은 training loss가 낮으면서 validation loss도 낮은 상태를 의미한다|
+|save_total_limit|너무 많은 checkpoint들이 저장되는 것을 방지하기 위해 마지막 몇 개의 checkpoint만 저장할 수 있다. load_best_model_at_end 까지 설정되어 있으면 best model도 포함해서 저장된다|
