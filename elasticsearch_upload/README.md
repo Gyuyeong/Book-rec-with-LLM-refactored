@@ -16,6 +16,10 @@ pip install pandas
 pip install elasticsearch
 pip install tqdm
 ```
+-elasticsearch 홈 디렉토리에서
+```
+$ bin/elasticsearch-plugin install analysis-nori
+```
 
 ## 데이터 CSV 형식
 
