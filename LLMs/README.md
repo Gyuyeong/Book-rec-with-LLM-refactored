@@ -354,3 +354,16 @@ training_args = TrainingArguments(
     #save_total_limit=10  # total saved checkpoints are 10
 )
 ```
+|파라미터|설명|값|
+|---|---|---|
+|output_dir|학습된 모델 저장 경로.||
+|overwrite_output_dir|새로 학습할 시 output_dir에 명시된 곳에 이미 모델이 있을 경우 덮어씌운다. **실수로 덮어씌우는 실수를 하지 않게 조심해야 한다.**|True|
+|num_train_epochs|전체 데이터를 학습하는 횟수. 100을 넘어가면서부터는 모델의 성능이 변한다는 느낌이 없음|100|
+|per_device_batch_size|학습 데이터 batch size. GPU의 메모리 용량에 맞춰서 설정해주면 된다|1|
+|save_steps|checkpoint를 저장하는 step interval. 10으로 설정하면 10step마다 model의 checkpoint가 생성되고, 각 모델을 사용할 수 있다.|10|
+|logging_steps|loss 와 learning rate 등 step 마다 변동하는 값은 기록하는 interval|10|
+|prediction_loss_only|prediction loss만 기록|True|
+|fp16|16bit 실수형 자료구조로 학습 진행 여부. 모델이 이미 양자화 되어있는 경우, 무시된다.|True|
+|learning_rate|학습률|3e-5|
+|lr_scheduler_type|학습을 하면서 점차 learning rate를 감소시키는 방식. Cosine이 가장 무난한 선택지로 보인다|"cosine"|
+|warmup_step|learning rate scheduler를 적용하기 전 기다리는 step의 수|5|
