@@ -25,4 +25,9 @@ pip install peft
 `Pytorch`와 `transformers`의 버전은 반드시 위 버전을 따라야 함
 
 ## Model Fine-tuning
-`LLMs` 파일 내에 위치
+`./training_model` 파일 내에 위치
+
+- `book_evaluation_generation.py` : 추천 도서 평가 모델 학습 코드
+- `book_recommendation_train.py` : 도서 추천 사유 생성 학습 코드
+- `intention_train.py` : 의도 분류 학습 코드
+- `consolidated_model_train.py` : 3가지 task 통합 모델
