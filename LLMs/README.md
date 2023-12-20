@@ -490,6 +490,28 @@ generation_args = dict(
 ## Generation
 각 함수가 거의 동일하게 작동한다.
 ```
+def determine_intention(user_input: str, model=model, tokenizer=tokenizer):
+    generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
+
+    generation_args = dict(
+        num_beams=2,  # test  2, 3
+        repetition_penalty=2.0,
+        no_repeat_ngram_size=4,
+        max_new_tokens=512,
+        eos_token_id=tokenizer.eos_token_id,
+        do_sample=True,
+        top_p=0.15,
+        early_stopping=True,
+    )
+
+    mapped_prompt = PROMPT_DICT["intention"].format_map({"input": user_input})
+    response = generator(mapped_prompt, **generation_args)  # generate
+    result = (response[0]["generated_text"]).replace(
+        mapped_prompt, ""
+    )  # response to query
+    return result
+```
+```
 def generate_evaluation(user_input: str, model=model, tokenizer=tokenizer):
     generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
@@ -497,10 +519,10 @@ def generate_evaluation(user_input: str, model=model, tokenizer=tokenizer):
         num_beams=2,
         repetition_penalty=2.0,
         no_repeat_ngram_size=4,
-        max_new_tokens=1024,
+        max_new_tokens=512,
         eos_token_id=tokenizer.eos_token_id,
         do_sample=True,
-        top_p=0.5,
+        top_p=0.15,
         early_stopping=True,
     )
 
@@ -509,8 +531,116 @@ def generate_evaluation(user_input: str, model=model, tokenizer=tokenizer):
     result = (response[0]["generated_text"]).replace(mapped_prompt, "")
     return result
 ```
-들어온 데이터에 task에 맞는 prompt를 붙이고 `pipeline`을 사용해서 텍스트 생성기를 만든 후, 생성을 해주면 된다. 그 뒤, prompt와 input 부분만 없애주면 생성이 완료된다. 
+```
+def generate_recommendation(
+    user_input: str,
+    book_data: list,
+    target_lang,
+    isbn_list: list,
+    model=model,
+    tokenizer=tokenizer,
+):
+    outstring = str()
+    generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
+    generation_args = dict(
+        num_beams=2,
+        repetition_penalty=2.0,
+        no_repeat_ngram_size=4,
+        max_new_tokens=512,
+        eos_token_id=tokenizer.eos_token_id,
+        do_sample=True,
+        top_p=0.15,
+        early_stopping=True,
+    )
+
+    mapped_prompt = PROMPT_DICT["introduction"].format_map({"input": user_input})
+    response = generator(mapped_prompt, **generation_args)
+    result = (response[0]["generated_text"]).replace(
+        mapped_prompt, ""
+    )  # response to query
+    print(result)
+    result = translate_text(target_lang, result)
+    outstring = result + "<br>"
+    # book dataset of book data
+    list_book = [
+        PROMPT_DICT["generation"].format_map(
+            {"input": "user_query: {" + user_input + "}, " + book}
+        )
+        for book in book_data
+    ]
+    list_result = generator(list_book, **generation_args)
+
+    pattern = r"title\s*=\s*\[([^\]]+)\],\s*author\s*=\s*\[([^\]]+)\]"
+
+    for book_prompt, result, isbn in zip(list_book, list_result, isbn_list):
+        title_and_author_result = re.findall(pattern, book_prompt)
+        print(
+            "["
+            + title_and_author_result[0][0]
+            + "] ("
+            + title_and_author_result[0][1]
+            + ")"
+        )
+        outstring += (
+            "["
+            + title_and_author_result[0][0]
+            + "] ("
+            + title_and_author_result[0][1]
+            + ")"
+            + "<br>"
+        )
+        final_result = result[0]["generated_text"].replace(book_prompt, "")
+        print(final_result)
+        print()
+        final_result = translate_text(target_lang, final_result)
+        outstring += (
+            final_result
+            + '<br><a href="https://www.booksonkorea.com/product/'
+            + str(isbn)
+            + '" target="_blank" class="quickViewButton">Quick View</a><br><br>'
+        )
+    return outstring
+```
+들어온 데이터에 task에 맞는 prompt를 붙이고 `pipeline`을 사용해서 텍스트 생성기를 만든 후, 생성을 해주면 된다. 그 뒤, prompt와 input 부분만 없애주면 생성이 완료된다.
+
+###각 task 별 예시 input & output
+
+```
+# intention generation
+result = determine_intention(model, 
+                             tokenizer, 
+                             user_input="TOPIK 공부할 수 있게 책 추천해줘")
+
+# output
+단서들: [TOPIK:키워드, 공부할 수있게:키워드]
+추론: 입력 문장은 책 추천을 원하고 있습니다. 이는 '책 추천해줘'를 통해서 확인할 수 있습니다. 단서를 보면, 'TOPIK'를 키워드로 하는, '공부할 수있도록'을 키워드로 하면서 'TOPIK'인 책을 원하고있는 것을 알 수 있습니다 따라서 입력 문장의 의도는 '메타 정보 검색'입니다
+의도: 메타 정보 검색
+```
+
+```
+# evaluation generation
+result = generate_evaluation(model, 
+                    tokenizer, 
+                    user_input="QUERY : {이스라엘과 팔레스타인 관련된 도서를 알려줘}, INFO : {title = '팔레스타인과 이스라엘의 분쟁' introduction = '이 책은 팔레스타인 지역을 둘러싼 팔레스타인 아랍인과 이스라엘 유대인의 분쟁의 역사를 담고 있다. 연이은 전쟁으로 수많은 사람들의 희생이 거듭되고 있음에도 분쟁 해결이 쉽지 않은 곳, 바로 팔레스타인의 역사인 셈이다. 팔레스타인 분쟁의 시작은 아주 오래 전 팔레스타인에 살았던 유대인들이 시오니즘 운동을 토대로 1948년 팔레스타인에 유대 민족 국가인 이스라엘을 건국하면서 비롯되었다. 이스라엘의 건국은 팔레스타인에 살고 있던 아랍인들에게는 조상 대대로 살아온 삶의 터전을 잃게 됨을 의미했다. 또한 이스라엘 건국은 거대한 문명 충돌을 가지고 왔다. 유대 민족의 옛 수도 예루살렘은 유대 민족이 유일신으로 섬기는 여호와의 성전이 있던 곳이자, 예수 그리스도가 십자가에 못 박혀 죽은 곳이며 동시에 이슬람교 창시자 무함마드가 하늘로 승천한 이슬람교 3대 성지 중 하나였다. 결국 한 지역에 유대교, 기독교, 이슬람교가 공존하게 되었고, 이후 예루살렘은 그 누구도 양보할 수 없는 분쟁의 중심에 서게 되었다. 이 책은 이처럼 팔레스타인 분쟁의 시발점이 되었던 이스라엘 건국을 기점으로 이후 팔레스타인 아랍인과 이스라엘 간에 일어났던 크고 작은 사건들을 상세히 설명한다. 덕분에 네 차례에 걸쳐 일어난 중동전쟁은 물론 냉전시대 이후 본격화되었던 중동 평화를 위한 노력이 어떻게 전개되었는지 또한 쉽게 이해할 수 있다. 뿐만 아니라 유대인들의 미국 내 영향력, 팔레스타인 아랍인들의 독립을 위한 노력, 이스라엘을 지원하는 미국을 향한 이슬람원리주의자들의 과격한 테러 등 팔레스타인 지역을 둘러싼 사건과 인물에 대한 친절한 설명은 팔레스타인과 이스라엘 분쟁에 대한 이해를 높인다. 특히 이 책에서 주목하고 있는 것은 팔레스타인과 이스라엘 분쟁으로 인해 생겨난 여러 가지 문제들이다. 삶의 터전을 빼앗긴 지 60여 년이 지난 지금도 집으로 돌아갈 수 없는 팔레스타인 난민들, 이들을 수용하기에는 턱없이 부족한 정착지, 부족한 수자원 등을 해결하기 위해서 국제 사회는 어떤 역할을 해야 하는지에 대한 깊은 고민이 담겨 있다.' author='손기화' publisher='주니어김영사' isbn=9788934955788}")
+
+# output
+Pass
+```
+
+```
+generate_recommendation(model=model, 
+                     tokenizer=tokenizer, 
+                      user_input='사회비판의 내용을 담은 시집 추천', 
+                      book_data=['book: {title: [한국리얼리즘 한시의 이해], author: [정양 외], introduction: [현직교수가 한국 한시의 현실인식에 대해 작품예와 함께 탐구한 저서. 현실주의 한시의 특질,  현실주의 한시의 역사적 흐름,봉건체제의 모순과 현실비판, 피폐된 농촌 현실과 삶의 갈등, 건강한 전가생활과 공동체적 삶의 추구 등으로 엮었다.]}'])
+
+#output
+사회비판적인 내용을 담고 있는 시집을 추천해 드리겠습니다:
+
+
+[한국리얼리즘 한시의 이해] (정양 외 저)
+- 이 책은 현직 교수가 한국 한시에 대한 현실인식을 작품예와 더불어 탐구한 연구서로, 현실주의 한시의 특징, 현실주의 한시가 역사적으로 어떻게 변화해왔는지, 봉건체제의 모순 및 현실비판, 농촌의 현실과 삶과의 갈등, 건강하고 지속가능한 공동체적 삶 등의 주제를 다루고 있습니다.
+```
 ---
 
 작성자 : 권규영
