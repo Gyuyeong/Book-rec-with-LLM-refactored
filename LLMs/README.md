@@ -444,4 +444,31 @@ model = PeftModel.from_pretrained(
 
 **중요**
 
-정상적으로 학습되었다면 각 `checkpoint`파일 안에 `adapter_config.json`이라는 파일이 들어있을 것이다. 만약 들어있지 않다면 위 코드를 실행하면 `could not find adapter_config.json` 에러가 뜨면서 실행에 실패할 것이다. 이 경우에는 학습에 실패한 것이다. 학습을 했는데도 불구하고 `adapter_config.json`이 정상적으로 생성되지 않는 원인을 정확하게 파악하지는 못했지만, 주요 원인은 패키지 간의 호환성 문제가 대다수였다. 
+정상적으로 학습되었다면 각 `checkpoint`파일 안에 `adapter_config.json`이라는 파일이 들어있을 것이다. 만약 들어있지 않다면 위 코드를 실행하면 `could not find adapter_config.json` 에러가 뜨면서 실행에 실패할 것이다. 이 경우에는 학습에 실패한 것이다. 학습을 했는데도 불구하고 `adapter_config.json`이 정상적으로 생성되지 않는 원인을 정확하게 파악하지는 못했지만, 주요 원인은 패키지 간의 호환성 문제가 대다수였다.
+
+## Generation Arguments
+Task별 생성 함수에는 `generation_args`에 생성 관련된 하이퍼파라미터들이 있다.
+
+```
+generation_args = dict(
+        num_beams=2,
+        repetition_penalty=2.0,
+        no_repeat_ngram_size=4,
+        max_new_tokens=512,
+        eos_token_id=tokenizer.eos_token_id,
+        do_sample=True,
+        top_p=0.15,
+        early_stopping=True,
+    )
+```
+
+|하이퍼파라미터|설명|값|
+|---|---|---|
+|num_beams|beam search의 beam 개수, 모델이 다음에 올 토큰을 예측할 때 한가지만 선택하는 것이 아닌 여러 개의 beam을 선택해서 그 중 가장 괜찮은 거를 고르는 방식이다|2|
+|repetition_penalty|다음 토큰이 이전 토큰과 동일한 경우, 해당 토큰에 어느정도 패널티를 부과할지애 관한 파라미터|2.0|
+|no_repeat_ngram_size|n개의 연속된 token이 여러번 반복되는 걸 방지|4|
+|max_new_tokens|최대 생성 가능 토큰 수|512|
+|do_sample|beam search를 위해 설정|True|
+|top_p|다음 토큰을 예측할 때 상위 p%의 토큰들만을 고려하게끔 해서 생성 결과가 다양해지게 하는 것을 방지 (0과 1 사이의 값만 가능)|0.15|
+|early_stopping|beam search가 끝남과 동시에 생성을 종료할지 여부|True|
+|temperature|작을 수록 생성 결과가 똑같이 나오고 클수록 다양해짐. 다만 이 값을 1.0 미만으로 줄일 시 생성 과정에서 확률값이 표현 가능한 숫자 범위를 벗어나는 에러가 발생해서 생성이 실패하는 경우가 잦아서 기본값을 사용|1.0|
