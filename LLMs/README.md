@@ -203,8 +203,6 @@ Completion 부분은 '이 책은 ~' 으로 시작하게끔 학습 데이터가 �
 
 ## Training
 통합 모델 코드가 있는 `consolidated_model_train.py`를 기준으로 작성했습니다. 다른 파일들도 개별 모델 학습이라 사실상 동일합니다.
-
-`HuggingFace`에서 모델 및 tokenizer 불러오기
 ```
 MODEL_ID = "rycont/kakaobrain__kogpt-6b-8bit"
 ```
@@ -213,6 +211,8 @@ MODEL_ID 부분을 변경하면 다른 모델로도 학습이 가능하다. 생�
 **참고 방법**
 
 원하는 모델을 찾은 뒤, `Files and Versions`에 들어가면 모델마다 `README` 또는 `config.json`이 있을 것이다. 파일에 들어가서 해당 모델이 `CausalLM`인지를 확인. 맞다면 transformers 버전이 해당 모델을 지원하지 않는 것이 아닌 이상 해당 코드로 학습이 가능할 것이다.
+
+`HuggingFace`에서 모델 및 tokenizer 불러오기
 ```
 # get model and tokenizer
 model = AutoModelForCausalLM.from_pretrained(MODEL_ID)
@@ -231,3 +231,50 @@ tokenizer.pad_token = tokenizer.eos_token
 tokenizer.add_tokens([CLUE_TOKEN, REASONING_TOKEN, LABEL_TOKEN], special_tokens=True)
 model.resize_token_embeddings(len(tokenizer)) # token 이 추가되었으니, model의 embedding 크기를 다시 맞춰춰야 한다.
 ```
+
+`model_max_length`를 조절해서 모델이 받을 수 있는 입력의 최대 길이를 정해줄 수 있다.
+
+데이터 로드
+```
+# load data for each task
+intention_dataset = SFT_dataset(data_path_1_SFT="/path/to/intention/data.json", tokenizer=tokenizer, task="intention", verbose=True)
+evaluation_dataset = SFT_dataset(data_path_1_SFT="/path/to/evaluation/data.json", tokenizer=tokenizer, task="evaluation", verbose=True)
+generation_dataset = SFT_dataset(data_path_1_SFT="/path/to/recommendation/data.json", tokenizer=tokenizer, task="generation", verbose=True)
+
+# concatenate all dataset
+train_dataset = ConcatDataset([intention_dataset, evaluation_dataset, generation_dataset])
+evaluation_dataset = None  # 통합 모델에 evaluation dataset은 사용하지 않음
+data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)  # text padding을 학습하는 중에 실행해주는 data collator
+```
+
+각 데이터 별로 JSON 파일에 저장해서 올리면 된다. `generation_dataset`의 경우, 멘트 생성과 추천 사유 생성 관련 데이터가 함께 들어있기 때문에 실제 데이터를 processing하는 과정의 코드가 다음과 같다
+```
+        # class SFT_Dataset 에서 __init__ 메소드의 일부
+
+        sources = []
+        targets = []
+
+        # inputs: 모델이 생성을 위해 받는 입력. 사용자가 chatbot에 질의한 문장이 들어오게 된다
+        # targets: 모델이 생성해야 하는 것
+        if task == "intention":  # intention 데이터
+            prompt_input = PROMPT_DICT["intention"]
+            for example in list_data_dict:
+                sources.append(prompt_input.format_map({"input": example["input"]}))
+                targets.append(f"{CLUE_TOKEN}단서들: {example['clues']}{CLUE_TOKEN}\n{REASONING_TOKEN}추론: {example['reasoning']}{REASONING_TOKEN}\n{LABEL_TOKEN}의도: {example['intention']}{LABEL_TOKEN}{tokenizer.eos_token}")
+        elif task == "evaluation": # evaluation 데이터
+            prompt_input = PROMPT_DICT["evaluation"]
+            for example in list_data_dict:
+                sources.append(prompt_input.format_map({"input": example["input"]}))
+                targets.append(f"{example['completion']}{tokenizer.eos_token}")
+        else:  # generation 데이터
+            for example in list_data_dict:
+                if example["prompt"].startswith("response"):  # 소개 관련 데이터
+                    prompt_input = PROMPT_DICT["introduction"]
+                else:  # 추천 사유 관련 데이터
+                    prompt_input = PROMPT_DICT["generation"]
+                sources.append(prompt_input.format_map({"input": example["input"]}))
+                targets.append(f"{example['completion']}{tokenizer.eos_token}")
+```
+
+멘트 관련 데이터와 추천 사유 관련 데이터를 분리해서 보관한다면 코드를 if문의 task를 추가해서 코드를 조금 다르게 작성할 수 있을 것이다.
+
