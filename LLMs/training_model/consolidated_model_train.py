@@ -217,14 +217,14 @@ tokenizer.add_tokens([CLUE_TOKEN, REASONING_TOKEN, LABEL_TOKEN], special_tokens=
 model.resize_token_embeddings(len(tokenizer)) # token 이 추가되었으니, model의 embedding 크기를 다시 맞춰춰야 한다.
 
 # load data for each task
-intention_dataset = SFT_dataset(data_path_1_SFT="./ner_tagged_data.json", tokenizer=tokenizer, task="intention", verbose=True)
-evaluation_dataset = SFT_dataset(data_path_1_SFT="./pgwdata200.json", tokenizer=tokenizer, task="evaluation", verbose=True)
-generation_dataset = SFT_dataset(data_path_1_SFT="./sft_data_1040.json", tokenizer=tokenizer, task="generation", verbose=True)
+intention_dataset = SFT_dataset(data_path_1_SFT="/path/to/intention/data.json", tokenizer=tokenizer, task="intention", verbose=True)
+evaluation_dataset = SFT_dataset(data_path_1_SFT="/path/to/evaluation/data.json", tokenizer=tokenizer, task="evaluation", verbose=True)
+generation_dataset = SFT_dataset(data_path_1_SFT="/path/to/recommendation/data.json", tokenizer=tokenizer, task="generation", verbose=True)
 
 # concatenate all dataset
 train_dataset = ConcatDataset([intention_dataset, evaluation_dataset, generation_dataset])
-evaluation_dataset = None
-data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
+evaluation_dataset = None  # evaluation data 미사용
+data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer) # 학습 중 padding을 해줄 data collator
 
 # prepare LoRA
 # 각 hyperparameter들은 여러 논문 밑 경험상 가장 괜찮았던 값들로 구성함
@@ -239,24 +239,20 @@ config = LoraConfig(
 model = get_peft_model(model, config)
 model.print_trainable_parameters()
 
+# training arguments
 training_args = TrainingArguments(
-    output_dir="./consolidated_models/kakao_models/data_300_n_100_lr_3e_5", # 학습된 모델 저장 경로
+    output_dir="/output/dir", # 학습된 모델 저장 경로
     overwrite_output_dir=True, #overwrite the content of the output directory
     num_train_epochs=100, # number of training epochs
     per_device_train_batch_size=1, # batch size for training. GPU 크기 문제로 batch size는 1로 해야 했다
-    per_device_eval_batch_size=1,  # batch size for evaluation
-    eval_steps = 5, # Number of update steps between two evaluations.
     save_steps=10, # after # steps model is saved
-    #evaluation_strategy="steps",
     logging_steps=10,
     warmup_steps=5,# number of warmup steps for learning rate scheduler
     prediction_loss_only=True,
     fp16=True,  # 공간 절약을 위해 floating point 16d으로 학습을 진행 (물론 현재 사용하는 모델이 fp16이라 큰 상관은 없다)
     gradient_accumulation_steps=16,  # GPU 공간 절약을 위해 추가한 hyperparameter
     learning_rate=3e-5,  # learning rate은 조금 작게 하고 오랫동안 학습시키는 방식을 택함 (1e-05 3e-05 테스트 해봄)
-    lr_scheduler_type="cosine",  # learning rate가 시간이 갈수록 점점 작아지게끔 하는 scheduler 사용
-    #load_best_model_at_end=True, # always save the best model
-    #save_total_limit=10  # total saved checkpoints are 10
+    lr_scheduler_type="cosine"  # learning rate가 시간이 갈수록 점점 작아지게끔 하는 scheduler 사용
 )
 
 trainer = Trainer(
