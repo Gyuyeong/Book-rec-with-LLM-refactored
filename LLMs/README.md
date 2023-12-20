@@ -404,3 +404,42 @@ nohup python consolidated_model_train.py > output.log &
 cat output.log
 ```
 를 해주면 된다.
+
+## Generation
+`./generating_with_model` 디렉토리에 위치
+- `intention_generation.py` : 의도 분류 생성
+- `evaluation_generation.py` : 추천 도서 평가 생성
+- `book_recommendation_generation.py` : 멘트 및 추천 사유 생성
+- `consolidated_generation.py` : 통합 모델 생성
+
+통합 모델 코드 기준으로 설명한다. 다른 코드들은 개별 코드들이고 사실상 동일하다.
+
+## Preparation
+학습을 했을 때와 동일한 설정으로 model과 tokenizer를 불러와야 한다.
+```
+MODEL_ID = "rycont/kakaobrain__kogpt-6b-8bit"
+
+model = AutoModelForCausalLM.from_pretrained(MODEL_ID)
+tokenizer = AutoTokenizer.from_pretrained(
+    MODEL_ID, padding_side="right", model_max_length=512
+)
+tokenizer.add_special_tokens(
+    {"eos_token": EOS_TOKEN, "bos_token": BOS_TOKEN, "unk_token": UNK_TOKEN}
+)
+tokenizer.pad_token = tokenizer.eos_token
+
+tokenizer.add_tokens([CLUE_TOKEN, REASONING_TOKEN, LABEL_TOKEN], special_tokens=True)
+model.resize_token_embeddings(len(tokenizer))
+```
+이 때 불러오는 모델은 `Huggingface`에서 가져온 fine-tune이 되지 않은 **원본 모델**이다. LoRA를 통해 학습된 것은 모델이 아니라 모델을 감싼 adapter이다.
+
+`peft`를 활용해서 학습 과정에서 저장된 checkpoint를 가져와서 원본 모델에 부착한다.
+```
+model = PeftModel.from_pretrained(
+    model=model,
+    model_id="./consolidated_models/kakao_models/n_100_lr_3e_5/checkpoint-9300/",
+)
+```
+학습된 adapter의 위치는 학습할 때 명시한 `output_dir`안에 있는 여러 `checkpoint`파일 안에 있다.
+
+정상적으로 학습되었다면 각 `checkpoint`파일 안에 `adapter.json`이라는 파일이 들어있을 것이다.
