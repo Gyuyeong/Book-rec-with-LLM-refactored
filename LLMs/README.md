@@ -433,13 +433,15 @@ model.resize_token_embeddings(len(tokenizer))
 ```
 이 때 불러오는 모델은 `Huggingface`에서 가져온 fine-tune이 되지 않은 **원본 모델**이다. LoRA를 통해 학습된 것은 모델이 아니라 모델을 감싼 adapter이다.
 
-`peft`를 활용해서 학습 과정에서 저장된 checkpoint를 가져와서 원본 모델에 부착한다.
+`peft`를 활용해서 학습 과정에서 저장된 checkpoint를 가져와서 원본 모델에 부착한다. 아래는 예시이다.
 ```
 model = PeftModel.from_pretrained(
     model=model,
     model_id="./consolidated_models/kakao_models/n_100_lr_3e_5/checkpoint-9300/",
 )
 ```
-학습된 adapter의 위치는 학습할 때 명시한 `output_dir`안에 있는 여러 `checkpoint`파일 안에 있다.
+학습된 adapter의 위치는 학습할 때 명시한 `output_dir`안에 있는 여러 `checkpoint`파일 안에 있다. [여기](https://huggingface.co/docs/transformers/main/peft)를 참고
 
-정상적으로 학습되었다면 각 `checkpoint`파일 안에 `adapter.json`이라는 파일이 들어있을 것이다.
+**중요**
+
+정상적으로 학습되었다면 각 `checkpoint`파일 안에 `adapter_config.json`이라는 파일이 들어있을 것이다. 만약 들어있지 않다면 위 코드를 실행하면 `could not find adapter_config.json` 에러가 뜨면서 실행에 실패할 것이다. 이 경우에는 학습에 실패한 것이다. 학습을 했는데도 불구하고 `adapter_config.json`이 정상적으로 생성되지 않는 원인을 정확하게 파악하지는 못했지만, 주요 원인은 패키지 간의 호환성 문제가 대다수였다. 
