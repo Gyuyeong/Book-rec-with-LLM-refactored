@@ -40,6 +40,11 @@ class ElasticSearchBM25Retriever:
         self.index_name = index_name
 
     def search_with_query(self, query: str) -> List[Bookdata]:
+        """
+        유저 쿼리로 검색(키워드 검색)
+        query : 유저 입력
+        return : Bookdata의 List
+        """
         with open("config.json", encoding="UTF-8") as f:
             config = json.load(f)
         n = config["elasticsearch_result_count"]
@@ -97,6 +102,11 @@ class ElasticSearchBM25Retriever:
         return docs
 
     def search_with_author(self, query: str) -> List[Bookdata]:
+        """
+        작가로 검색(메타 검색)
+        query : 작가 str
+        return : Bookdata의 List
+        """
         query_dict: dict()
         query_dict = {"query": {"term": {"author.keyword": query}}}
         res = self.client.search(
@@ -121,6 +131,11 @@ class ElasticSearchBM25Retriever:
         return docs[0 : config["default_number_of_books_to_return"]]
 
     def search_with_title(self, query: str) -> List[Bookdata]:
+        """
+        제목으로 검색(메타 검색)
+        query : 도서 제목 str
+        return : Bookdata의 List
+        """
         query_dict: dict()
         query_dict = {"query": {"term": {"title.keyword": {"value": query}}}}
 
@@ -146,6 +161,11 @@ class ElasticSearchBM25Retriever:
         return docs[0 : config["default_number_of_books_to_return"]]
 
     def search_with_publisher(self, query: str) -> List[Bookdata]:
+        """
+        출판사로 검색(메타 검색)
+        query : 출판사 str
+        return : Bookdata의 List
+        """
         query_dict: dict()
         query_dict = {"query": {"term": {"publisher.keyword": query}}}
 
@@ -173,6 +193,12 @@ class ElasticSearchBM25Retriever:
     def knn_only_search(
         self, tensor: np.ndarray, excluded_title: str
     ) -> List[Bookdata]:
+        """
+        텐서로 검색(유사도 검색)
+        tensor : 도서의 임베딩 벡터 np.ndarray
+        excluded_title : 배제할 도서제목(유사도서 검색한 제목)
+        return : Bookdata의 List
+        """
         with open("config.json", encoding="UTF-8") as f:
             config = json.load(f)
         n = config["elasticsearch_result_count"]
