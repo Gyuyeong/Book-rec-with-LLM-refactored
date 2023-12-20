@@ -33,14 +33,12 @@ setting = {
             "nori_analyzer": {
                 "type": "nori",
                 "tokenizer": "nori_mixed",
-                # "filter": ["lowercase"]
             }
         },
         "tokenizer": {
             "nori_mixed": {
                 "type": "nori_tokenizer",
                 "decompound_mode": "mixed",
-                "user_dictionary": "test_unique.txt",
             }
         },
     },
