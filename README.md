@@ -93,4 +93,4 @@ book recommendation system for KnP
     "meta_search_canned_text_ko": "다음과 같은 도서가 검색되었습니다.", //메타정보 검색 출력
     "meta_search_canned_text_en": "Following is the search result.", //메타정보 검색 출력
     "no_book_found_text": "No books found. Please try again", //도서 검색 실패시 출력
-    "filter_out_reccommended_books": true
+    "filter_out_reccommended_books": true //langchain에서 이미 추천된 도서 추천을 배제
