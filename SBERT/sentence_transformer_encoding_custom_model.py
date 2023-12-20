@@ -12,9 +12,12 @@ from tqdm import tqdm
 input_filename = f"csv file directory to upload"
 chunksize = 50
 
+with open("config.json", "r", encoding="UTF-8") as f:
+    import json
+
+    config = json.load(f)
 es = Elasticsearch(
-    ["https://115.71.239.131:9200"],
-    basic_auth=("elastic", "HWH1rJdFReoOA8i-NPiy"),
+    config["elasticsearch_url"],
     verify_certs=False,
     timeout=30,
     max_retries=10,
