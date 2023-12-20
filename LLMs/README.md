@@ -82,7 +82,7 @@ PROMPT_DICT ={
 
 ## Data Format For Training
 
-데이터는 모두 JSON 형식으로 저장되어야 한다.
+데이터는 모두 JSON 형식으로 저장되어야 한다. Sample 및 학습에 사용한 데이터는 `./training_model/data`에 위치해 있다.
 
 ### 1. 의도 분류 모델
 ```
