@@ -207,7 +207,13 @@ Completion 부분은 '이 책은 ~' 으로 시작하게끔 학습 데이터가 �
 `HuggingFace`에서 모델 및 tokenizer 불러오기
 ```
 MODEL_ID = "rycont/kakaobrain__kogpt-6b-8bit"
+```
+MODEL_ID 부분을 변경하면 다른 모델로도 학습이 가능하다. 생성형 모델 (`GPT`, `Polyglot` 계열)의 모델들을 사용 가능하다. 실제로 가능한지는 각 모델의 specification 참고
 
+**참고 방법**
+
+원하는 모델을 찾은 뒤, `Files and Versions`에 들어가면 모델마다 `README` 또는 `config.json`이 있을 것이다. 파일에 들어가서 해당 모델이 `CausalLM`인지를 확인. 맞다면 transformers 버전이 해당 모델을 지원하지 않는 것이 아닌 이상 해당 코드로 학습이 가능할 것이다.
+```
 # get model and tokenizer
 model = AutoModelForCausalLM.from_pretrained(MODEL_ID)
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID,
