@@ -87,7 +87,6 @@ $ bin/elasticsearch-plugin install analysis-nori
                  "nori_mixed": {
                      "type": "nori_tokenizer",
                      "decompound_mode": "mixed",
-                     "user_dictionary": "test_unique.txt"
                  }
              }
          }
@@ -100,21 +99,6 @@ $ bin/elasticsearch-plugin install analysis-nori
        - `none`: 어근을 분리하지 않고 완성된 합성어만 저장합니다.
        - `discard`: 합성어를 분리하여 각 어근만 저장합니다.
        - `mixed`: 어근과 합성어를 모두 저장합니다.
-     - `user_dictionary`: 추가로 사용할 사용자 사전을 지정합니다. 사용자 사전은 elasticsearch/config 디렉토리에 위치하고 있어야 합니다.
-  
-            **User dictionary example(test_unique.txt)**    
-            publiser #1
-            publiser #2
-            publiser #3
-            publiser #4
-            publiser #5
-            publiser #6
-            publiser #7
-            publiser #8
-            publiser #9
-            publiser #10
-            publiser #11
-            publiser #12
 
    - `mapping`: Elasticsearch 인덱스에 저장될 각 필드의 타입과 속성을 정의합니다. 
 
@@ -201,7 +185,7 @@ $ bin/elasticsearch-plugin install analysis-nori
 
 -  Python 환경에서 스크립트를 실행합니다.
    ```bash
-   python your_script_name.py
+   python /Book-rec-with-LLM-refactored/elasticsearch_upload/sentence_transformer_encoding.py
    ```
 
 ## 주의 사항
