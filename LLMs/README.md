@@ -304,3 +304,23 @@ book_recommendation: {input에 주어진 책 정보와 사용자 질의를 바�
 ### Response(응답):
 - 이 책은 중학생들을 위한 진로 상담에 대한 개론서로, 중학생들의 진로에 대한 이해를 돕고 자기주도학습 및 진로탐색에 대한 정보를 제공합니다.</s>
 ```
+
+## LoRA Configuration
+```
+config = LoraConfig(
+    task_type=TaskType.CAUSAL_LM,
+    r=8,
+    lora_alpha=16,
+    lora_dropout=0.05,
+    bias="none"
+)
+
+model = get_peft_model(model, config)
+```
+
+설정 가능한 값:
+|하이퍼파라미터|설명|값|
+|---|---|---|
+|r|Low intrinsic Rank, 원본 모델을 근사한 rank값|8|
+|lora_alpha|학습 시 LoRA가 영향을 끼치는 정도. 여러 논문에서 16을 고정으로 사용|16|
+|lora_dropout|과적합 방지를 위해 일정 cell들을 학습 중에 비활성화하는 비율|0.05|
