@@ -78,12 +78,13 @@ book recommendation system for KnP
 
 ### elasticsearch
 
+### 각 버전 사양
 ## config
     "elasticsearch_result_count": 30, //엘라스틱서치에서 bm25+knn 검색할 도서 권수
     "default_number_of_books_to_return": 3, // 기본으로 검색할 최대 도서
     "elasticsearch_url": "elasticsearch_url", //엘라스틱서치 (보안 정보를 포함한) 주소 
     "elasticsearch_index_name": "data", //엘라스틱서치 인덱스 명
-    "modelchoice": "opensourceLLM", //langchain 사용할지 여부
+    "flowchoice": "langchain", //langchain 사용할지 여부 "langchain" 또는 "nolangchain"
     "mongodb_uri": "mongodb url", 
     "intention_generation_url": "http://127.0.0.1:5001/generate/intention", //의도파악 모델 엔드포인트
     "evaluation_generation_url": "http://127.0.0.1:5001/generate/evaluation", //평가 모델 엔드포인트
@@ -93,4 +94,4 @@ book recommendation system for KnP
     "meta_search_canned_text_ko": "다음과 같은 도서가 검색되었습니다.", //메타정보 검색 출력
     "meta_search_canned_text_en": "Following is the search result.", //메타정보 검색 출력
     "no_book_found_text": "No books found. Please try again", //도서 검색 실패시 출력
-    "filter_out_reccommended_books": true //langchain에서 이미 추천된 도서 추천을 배제
+    "filter_out_reccommended_books": true //langchain flow 에서 이미 추천된 도서 추천을 배제
