@@ -103,7 +103,7 @@ LLMs/generating_with_model/ 의 각 모델 py 파일에서 마찬가지로 상�
 500x번 포트에 엔드포인트 오픈  
 /generation/&lt;task&gt; 로 post request가 가능
 ### elasticsearch
-elasticsearch README.md 참고
+elasticsearch_upload README.md 참고
 ## config
     "elasticsearch_result_count": 30, //엘라스틱서치에서 bm25+knn 검색할 도서 권수
     "default_number_of_books_to_return": 3, // 기본으로 검색할 최대 도서
