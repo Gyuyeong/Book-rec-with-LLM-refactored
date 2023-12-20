@@ -305,6 +305,8 @@ book_recommendation: {input에 주어진 책 정보와 사용자 질의를 바�
 - 이 책은 중학생들을 위한 진로 상담에 대한 개론서로, 중학생들의 진로에 대한 이해를 돕고 자기주도학습 및 진로탐색에 대한 정보를 제공합니다.</s>
 ```
 
+evaluation data를 사용할 경우, training_data에서 일부를 때어서 사용하면 된다. 다만 이번 통합 모델의 경우, 데이터의 양이 충분히 많지 않아서 전부 학습에 사용하기로 했다. Evaluation data를 만들고 싶다면 `torch.utils.data.random_split`을 활용하면 되고, 여기를 [참고](https://076923.github.io/posts/Python-pytorch-11/)하면 될 것이다.
+
 ## LoRA Configuration
 `peft` 라이브러리를 사용
 ```
@@ -367,3 +369,5 @@ training_args = TrainingArguments(
 |learning_rate|학습률|3e-5|
 |lr_scheduler_type|학습을 하면서 점차 learning rate를 감소시키는 방식. Cosine이 가장 무난한 선택지로 보인다|"cosine"|
 |warmup_step|learning rate scheduler를 적용하기 전 기다리는 step의 수|5|
+
+그 외에 evaluation 데이터가 있다면 
