@@ -7,6 +7,7 @@ book recommendation system for KnP
 │  config.json //실행사항의 config
 │  keys.py.example //keys.py 으로 사용해서 필요한 key를 입력
 │  README.md
+│  requirements.txt //필요 python library
 │
 ├─elasticsearch_upload //엘라스틱서치 document업로드
 │      README.md
@@ -40,9 +41,11 @@ book recommendation system for KnP
 │  │      intention_train.py
 │
 ├─SBERT //도서 임베딩을 위한 SBERT의 학습 및 생성
+│      elasticsearch_retriever_custom_model.py //SBERT 모델 이용한 elasticsearch 검색
 │      README.md
-│      unsup_CL_generation.py //SBERT 생성
-│      unsup_CL_train.py //SBERT 학습
+│      sentence_transformer_encoding_custom_model.py //SBERT 모델 이용한 elasticsearch 업로드
+│      unsup_CL_generation.py //SBERT 모델로 생성
+│      unsup_CL_train.py //SBERT 모델 학습
 │
 ├─system_manager //백엔드 시스템
 │  │  without_langchain.py //langchain을 사용하지 않는 flow. multi-turn(memory) 불가
