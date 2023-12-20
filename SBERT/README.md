@@ -12,7 +12,8 @@
  -7.11882889e-01 -4.46518838e-01 -9.76859272e-01 -5.73234200e-01]
 ```
 
-어떤 문장을 embedding 하기 위해서 사용할 수 있는 함수이다. (unsup_CL_generation.py에 정의)   
+어떤 문장을 embedding 하기 위해서 사용할 수 있는 함수이다.   
+(Book-rec-with-LLM-refactored/SBERT/unsup_CL_generation.py에 정의)   
 | variable | description |
 |---|:---:|
 | `sentence` | embedding 하고자 하는 문장 |
@@ -102,7 +103,8 @@ model.fit(train_objectives=[(train_dataloader, train_loss)],
 그러므로 만약 사용하는 embedding model을 바꾸고 싶다면 두 가지를 진행해야 한다. 먼저 Elasticsearch에 업로드 되어있는 도서 데이터 embedding vector를 사용하고자 하는 모델로 다시 embedding 하여 바꾸고 재 업로드 한 뒤에 KNN search의 과정에서도 해당 embedding model로 유저 쿼리를 임베딩 하여 KNN을 진행하면 된다.   
 
 먼저 Elasticsearch에 업로드된 도서 데이터의 embedding을 바꾸기 위해서 sentence_transformer_encoding.py 을 변경하여 실행하고, 새로운 index에 데이터를 업로드 해야 한다.
-index의 이름을 이전에 존재하지 않던 index의 이름으로 설정한 뒤, 새롭게 사용하고자 하는 embedding model을 불러와 모든 도서 데이터를 embedding 하고, 업로드한다. 이 과정이 끝나면 새로운 embedding model로 knn을 하기 위한 기본 세팅이 끝난다. (sentence_transformer_encoding.py의 4, 25, 83, 98 line 수정)
+index의 이름을 이전에 존재하지 않던 index의 이름으로 설정한 뒤, 새롭게 사용하고자 하는 embedding model을 불러와 모든 도서 데이터를 embedding 하고, 업로드한다. 이 과정이 끝나면 새로운 embedding model로 knn을 하기 위한 기본 세팅이 끝난다.   
+(Book-rec-with-LLM-refactored/elasticsearch_upload/sentence_transformer_encoding.py의 4, 25, 83, 98 line 수정)
 
 이렇게 custom model을 사용하기 위해서는 model 폴더를 실행시 폴더의 위치에 맞추어 model_name을 적절히 사용해야 한다. 혹은 실행 폴더와 상관 없이 제대로 된 모델을 사용하기 위해서는 model_name을 모델의 절대 경로로 설정하면 된다. 
 ```python
@@ -138,7 +140,8 @@ def appendbulk(row):
     )
 ```
 
-아래 코드가 Elasticsearch에서 유저의 질의가 들어왔을 때 embedding vector로 변환하는 부분이다. 이때 원래 사용하던 KR-SBERT의 이름을 넣는 것이 아닌 원하는 모델 이름을 넣어주면 해당 모델로 embedding을 진행할 수 있다. (elasticsearch_retriever.py 89 line의 함수 수정)
+아래 코드가 Elasticsearch에서 유저의 질의가 들어왔을 때 embedding vector로 변환하는 부분이다. 이때 원래 사용하던 KR-SBERT의 이름을 넣는 것이 아닌 원하는 모델 이름을 넣어주면 해당 모델로 embedding을 진행할 수 있다.   
+(Book-rec-with-LLM-refactored/elasticsearch_util/elasticsearch_retriever.py 89 line의 함수 수정)
 
 이렇게 다른 모델을 사용하기 위해서는 위에서 언급한 것처럼 해당 모델 폴더를 model_name에서 명시된 폴더에 위치시켜야 하고, 모델 폴더의 위치에 상관 없이 모델을 사용하기 위해서는 model_name을 모델 폴더의 절대 경로로 설정하면 된다.
 ```python
@@ -151,9 +154,12 @@ def search_with_query(self, query: str) -> List[Bookdata]:
     embed = model.encode(query)
 ```
 
-위와 같이 KNN의 embedding model을 바꾸기 위해 실행해야 하는 python 파일은 sentence_transformer_encoding_custom_model.py, elasticsearch_retriever_custom_model.py 파일을 통해 업로드 되어있으니 참고할 수 있다.
+위와 같이 KNN의 embedding model을 바꾸기 위해 실행해야 하는 코드는   
+Book-rec-with-LLM-refactored/SBERT/sentence_transformer_encoding_custom_model.py,   
+Book-rec-with-LLM-refactored/SBERT/elasticsearch_retriever_custom_model.py   
+파일을 통해 업로드 되어있으니 참고할 수 있다.
 
 ### 작성자
-| name | github_id | phone_number |
-| --- | :---: | ---: |
-| 정성원 | `hungrymozzi` | `010-5458-3081` |
+| name | github_id |
+| --- | :---: |
+| 정성원 | `hungrymozzi` |
