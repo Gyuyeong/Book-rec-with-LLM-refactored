@@ -12,5 +12,6 @@
     "use_gpt_api_for_final": false,
     "meta_search_canned_text_ko": "다음과 같은 도서가 검색되었습니다.",
     "meta_search_canned_text_en": "Following is the search result.",
+    "no_book_found_text": "No books found. Please try again",
     "filter_out_reccommended_books": true
 }
