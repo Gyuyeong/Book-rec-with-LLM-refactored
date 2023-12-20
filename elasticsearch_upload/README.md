@@ -16,6 +16,10 @@ pip install pandas
 pip install elasticsearch
 pip install tqdm
 ```
+- elasticsearch 홈 디렉토리에서
+```
+$ bin/elasticsearch-plugin install analysis-nori
+```
 
 ## 데이터 CSV 형식
 
@@ -204,3 +208,5 @@ pip install tqdm
 
 - Elasticsearch 인스턴스의 설정과 연결을 확인하세요.
 - CSV 파일 형식과 data type이 올바른지 확인하세요. 만약 맞지 않는 경우 upload가 진행되지 않습니다.
+---
+작성자 :  박건우
