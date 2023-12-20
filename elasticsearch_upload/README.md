@@ -11,7 +11,7 @@
 
 ## Installation
 ```
-pip install sentence_transformers
+pip install sentence-transformers
 pip install pandas
 pip install elasticsearch
 pip install tqdm
