@@ -38,7 +38,6 @@ setting = {
     },
 }
 
-
 mapping = {
     "properties": {
         "author": {
@@ -77,23 +76,20 @@ mapping = {
 }
 
 
-if es.indices.exists(index="data"):
+if es.indices.exists(index=index_name):
     print("exists!")
     pass
 else:
     es.indices.create(index=index_name, body={"mappings": mapping, "settings": setting})
 
-data = []
+    data = []
 
+    def appendbulk(row):
+        targetstring = f"category: {row['category']}, author: {row['author']}, introduction: {row['introduction']}, title: {row['title']}"
+        embedding = model.encode(targetstring)
 
-def appendbulk(row):
-
-    targetstring = f"category: {row['category']}, author: {row['author']}, introduction: {row['introduction']}, title: {row['title']}"
-    embedding = model.encode(targetstring)
-    
-    data.append(
-        {
-            "_index": "data",
+        data.append({
+            "_index": index_name,
             "_source": {
                 "author": row["author"],
                 "category": row["category"],
@@ -105,8 +101,7 @@ def appendbulk(row):
                 "toc": row["toc"],
                 "embedding": embedding,
             },
-        }
-    )
+        })
 
 
 with pd.read_csv(input_filename, chunksize=chunksize, encoding="utf-8") as reader:
