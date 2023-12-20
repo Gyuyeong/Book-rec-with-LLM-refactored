@@ -4,12 +4,19 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 from tqdm import tqdm
 
-
+#initializing the model for embedding 
 model = SentenceTransformer("snunlp/KR-SBERT-V40K-klueNLI-augSTS")
+
+#Path to the input CSV file
 input_filename = f"csv file directory to upload"
+
+# Size of chunks to read from the CSV file
 chunksize = 50
+
+#Name of the Elasticsearch index
 index_name = "data"
 
+#Elasticsearch client setup with connection details
 es = Elasticsearch(
     ["https://115.71.239.131:9200"],
     basic_auth=("elastic", "HWH1rJdFReoOA8i-NPiy"),
@@ -19,6 +26,7 @@ es = Elasticsearch(
     retry_on_timeout=True,
 )
 
+#Setting up analysis and tokenization for Korean language using Nori
 setting = {
     "analysis": {
         "analyzer": {
@@ -38,6 +46,7 @@ setting = {
     },
 }
 
+# Mapping for the data structure in Elasticsearch
 mapping = {
     "properties": {
         "author": {
@@ -75,19 +84,25 @@ mapping = {
     }
 }
 
-
+# Check if the index exists, if not, create a new index with the specified mapping and settings
 if es.indices.exists(index=index_name):
     print("exists!")
     pass
 else:
     es.indices.create(index=index_name, body={"mappings": mapping, "settings": setting})
 
+# List to store data to be bulk uploaded
 data = []
 
+#Function to append data to bulk list
 def appendbulk(row):
+    #Concatenating category, author, introduction title for embedding
     targetstring = f"category: {row['category']}, author: {row['author']}, introduction: {row['introduction']}, title: {row['title']}"
+    
+    #Generating embedding for the targetstring
     embedding = model.encode(targetstring)
 
+    #Appending data in the required format for Elasticsearch
     data.append({
         "_index": index_name,
         "_source": {
@@ -103,10 +118,16 @@ def appendbulk(row):
         },
     })
 
-
+# Reading the CSV file in chunks
 with pd.read_csv(input_filename, chunksize=chunksize, encoding="utf-8") as reader:
     for chunk in tqdm(reader):
         print("--------------------------------------")
+
+        #Applying 'appendbulk' function to each row in the chunk
         chunk.apply(appendbulk, axis=1)
+        
+        #Bulk uploading the data to Elasticsearch
         bulk(es, data)
+        
+        #Clearing the list for the next chunk
         data.clear()
