@@ -472,3 +472,29 @@ generation_args = dict(
 |top_p|다음 토큰을 예측할 때 상위 p%의 토큰들만을 고려하게끔 해서 생성 결과가 다양해지게 하는 것을 방지 (0과 1 사이의 값만 가능)|0.15|
 |early_stopping|beam search가 끝남과 동시에 생성을 종료할지 여부|True|
 |temperature|작을 수록 생성 결과가 똑같이 나오고 클수록 다양해짐. 다만 이 값을 1.0 미만으로 줄일 시 생성 과정에서 확률값이 표현 가능한 숫자 범위를 벗어나는 에러가 발생해서 생성이 실패하는 경우가 잦아서 기본값을 사용|1.0|
+
+## Generation
+각 함수가 거의 동일하게 작동한다.
+```
+def generate_evaluation(user_input: str, model=model, tokenizer=tokenizer):
+    generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
+
+    generation_args = dict(
+        num_beams=2,
+        repetition_penalty=2.0,
+        no_repeat_ngram_size=4,
+        max_new_tokens=1024,
+        eos_token_id=tokenizer.eos_token_id,
+        do_sample=True,
+        top_p=0.5,
+        early_stopping=True,
+    )
+
+    mapped_prompt = PROMPT_DICT["evaluation"].format_map({"input": user_input})
+    response = generator(mapped_prompt, **generation_args)
+    result = (response[0]["generated_text"]).replace(mapped_prompt, "")
+    return result
+```
+들어온 데이터에 task에 맞는 prompt를 붙이고 `pipeline`을 사용해서 텍스트 생성기를 만든 후, 생성을 해주면 된다. 그 뒤, prompt와 input 부분만 없애주면 생성이 완료된다. 
+
+작성자 : 권규영
