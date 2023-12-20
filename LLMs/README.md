@@ -200,3 +200,28 @@ Completion 부분은 '이 책은 ~' 으로 시작하게끔 학습 데이터가 �
 **※ 주의시항**
 
 데이터의 형식을 정확히 지켜줘야 한다. 특히 서로 다른 괄호들이 서로 섞여 있는데 이를 혼동하면 학습이 잘 안될 수 있다.
+
+## Training
+통합 모델 코드가 있는 `consolidated_model_train.py`를 기준으로 작성했습니다. 다른 파일들도 개별 모델 학습이라 사실상 동일합니다.
+
+`HuggingFace`에서 모델 및 tokenizer 불러오기
+```
+MODEL_ID = "rycont/kakaobrain__kogpt-6b-8bit"
+
+# get model and tokenizer
+model = AutoModelForCausalLM.from_pretrained(MODEL_ID)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_ID,
+                                         padding_side="right",
+                                         model_max_length=768)  # input의 최대 길이는 768
+tokenizer.add_special_tokens(
+    {
+        "eos_token": EOS_TOKEN,
+        "bos_token": BOS_TOKEN,
+        "unk_token": UNK_TOKEN,
+    }
+)
+tokenizer.pad_token = tokenizer.eos_token
+# custom token들 추가하는 과정 
+tokenizer.add_tokens([CLUE_TOKEN, REASONING_TOKEN, LABEL_TOKEN], special_tokens=True)
+model.resize_token_embeddings(len(tokenizer)) # token 이 추가되었으니, model의 embedding 크기를 다시 맞춰춰야 한다.
+```
