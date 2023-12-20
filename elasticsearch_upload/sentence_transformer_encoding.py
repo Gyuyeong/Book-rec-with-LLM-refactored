@@ -1,16 +1,14 @@
 from sentence_transformers import SentenceTransformer
-
-
-model = SentenceTransformer("snunlp/KR-SBERT-V40K-klueNLI-augSTS")
-
 import pandas as pd
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 from tqdm import tqdm
 
 
+model = SentenceTransformer("snunlp/KR-SBERT-V40K-klueNLI-augSTS")
 input_filename = f"csv file directory to upload"
 chunksize = 50
+index_name = "data"
 
 es = Elasticsearch(
     ["https://115.71.239.131:9200"],
@@ -20,9 +18,6 @@ es = Elasticsearch(
     max_retries=10,
     retry_on_timeout=True,
 )
-
-
-index_name = "data"
 
 setting = {
     "analysis": {
@@ -80,6 +75,8 @@ mapping = {
         },
     }
 }
+
+
 if es.indices.exists(index="data"):
     print("exists!")
     pass
@@ -90,19 +87,10 @@ data = []
 
 
 def appendbulk(row):
-    if row["toc"] == "이 상품은 목차가 없습니다":
-        if row["introduction"] == "없음":
-            targetstring = f""
-        else:
-            targetstring = f""
-    else:
-        if row["introduction"] == "없음":
-            targetstring = f""
-        else:
-            targetstring = f""
-    targetstring = f"category: {row['category']}, author: {row['author']}, introduction: {row['introduction']}, title: {row['title']}"
 
+    targetstring = f"category: {row['category']}, author: {row['author']}, introduction: {row['introduction']}, title: {row['title']}"
     embedding = model.encode(targetstring)
+    
     data.append(
         {
             "_index": "data",

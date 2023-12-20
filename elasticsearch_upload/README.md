@@ -2,26 +2,34 @@
 
 이 스크립트는 CSV 파일에서 Elasticsearch 인덱스로 데이터를 업로드하기 위해 설계되었습니다. `sentence-transformers` 및 `elasticsearch` 파이썬 패키지를 사용하여 데이터를 효율적으로 처리하고 업로드합니다.
 
-## 필요 조건
+## 사용한 라이브러리
 
-- Python 3.6 이상
-- Elasticsearch 인스턴스
-- `sentence-transformers`
-- `elasticsearch`
-- `pandas`
-- `tqdm`
+- `sentence_transformers`: 문장 임베딩 생성을 위해 사용
+- `pandas`: CSV 파일 처리 및 데이터 조작을 위해 사용
+- `elasticsearch`: Elasticsearch와의 연결 및 데이터 업로드를 위해 사용
+- `tqdm`: 데이터 처리 진행 상황을 시각적으로 표시하기 위해 사용
 
-## 설치
-
-스크립트를 실행하기 전에 필요한 패키지가 설치되어 있는지 확인하세요. pip를 사용하여 설치할 수 있습니다:
-
-```bash
-pip install sentence-transformers elasticsearch pandas tqdm
+## Installation
 ```
+pip install sentence_transformers
+pip install pandas
+pip install elasticsearch
+pip install tqdm
+```
+
+## 데이터 CSV 형식
+
+- CSV 파일은 UTF-8 인코딩을 사용해야 합니다.
+- 다음과 같은 열이 포함되어야 합니다: `author`, `category`, `introduction`, `publisher`, `title`, `publish_date`, `isbn`, `toc`.
+- 각 열은 적절한 데이터 타입을 가져야 합니다 (예: `publish_date`는 날짜 형식).
+  
+| `author` | `category` | `introduction` | `publisher` | `title` | `publish_date` | `isbn` | `toc` |
+|----------|------------|----------------|-------------|---------|----------------|--------|-------|
+| 책의 저자 이름. | 책의 카테고리 또는 장르. | 책의 간략한 소개 또는 요약. | 책을 출판한 출판사 이름. | 책의 제목. | 책의 출판 날짜. 일반적으로 'YYYY-MM-DD' 형식을 사용합니다. | 책의 국제 표준 도서 번호(ISBN). | 책의 목차(Table of Contents). |
 
 ## 설정
 
-1. **Elasticsearch 연결**: 스크립트에서 Elasticsearch 인스턴스 세부 정보를 업데이트하세요.
+1. **Elasticsearch 연결 설정**:
 
    ```python
    es = Elasticsearch(
@@ -33,34 +41,121 @@ pip install sentence-transformers elasticsearch pandas tqdm
        retry_on_timeout=True,
    )
    ```
+- default
+  - `["https://your_elasticsearch_server:port"]`: Elasticsearch 서버의 URL과 포트 번호를 목록 형태로 지정합니다.
+- if needed
+  - `basic_auth=("username", "password")`: Elasticsearch 서버에 접근하기 위한 기본 인증 정보입니다. 
+  - `verify_certs=False`: SSL 인증서 검증을 비활성화합니다. 보안이 중요한 환경에서는 `True`로 설정하는 것이 좋습니다.
+  - `timeout=30`: 클라이언트의 요청 타임아웃 시간(초)을 설정합니다.
+  - `max_retries=10`: 최대 재시도 횟수를 지정합니다. 연결 실패 또는 타임아웃 발생 시 클라이언트가 재시도하는 횟수입니다.
+  - `retry_on_timeout=True`: 타임아웃 발생 시 재시도할지 여부를 결정합니다. `True`로 설정하면 타임아웃 발생 시 재시도를 시도합니다.
+  
+2. **업로드 설정**:
+    ```
+    input_filename = f"csv file directory to upload"
+    chunksize = 50
+    index_name = "data"
+    ```
+    - `input_filename` : 도서 데이터가 담긴 csv 파일의 경로
+    - `chunksize` : upload 하는 단위인 chunk의 크기 지정
+    - `index_name` : 도서 데이터를 upload 할 Elasticsearch의 index name
 
-2. **입력 파일**: CSV 파일의 경로를 지정하세요.
+3. **인덱스 설정 (`setting`과 `mapping`)**:
 
-   ```python
-   input_filename = "path_to_your_csv_file"
-   ```
+   - `setting`: 분석기와 토크나이저를 정의합니다. 예를 들어, 한글 텍스트 분석을 위한 Nori 분석기 설정은 다음과 같습니다:
 
-3. **인덱스 설정**: 스크립트는 미리 정의된 인덱스 설정을 사용합니다. 필요에 따라 `setting` 및 `mapping` 변수를 수정하세요.
+     ```python
+     setting = {
+         "analysis": {
+             "analyzer": {
+                 "nori_analyzer": {
+                     "type": "nori",
+                     "tokenizer": "nori_mixed"
+                 }
+             },
+             "tokenizer": {
+                 "nori_mixed": {
+                     "type": "nori_tokenizer",
+                     "decompound_mode": "mixed",
+                     "user_dictionary": "test_unique.txt"
+                 }
+             }
+         }
+     }
+     ```
+
+     **setting**:
+     - analyer와 tokenizer로 노리(nori) 한글 형태소 분석기를 사용합니다.
+     - `decompound_mode`: 옵션을 통해 합성어의 저장 방식을 결정합니다.
+       - `none`: 어근을 분리하지 않고 완성된 합성어만 저장합니다.
+       - `discard`: 합성어를 분리하여 각 어근만 저장합니다.
+       - `mixed`: 어근과 합성어를 모두 저장합니다.
+     - `user_dictionary`: 추가로 사용할 사용자 사전을 지정합니다. 사용자 사전은 elasticsearch/config 디렉토리에 위치하고 있어야 합니다.
+  
+            **User dictionary example(test_unique.txt)**    
+            publiser #1
+            publiser #2
+            publiser #3
+            publiser #4
+            publiser #5
+            publiser #6
+            publiser #7
+            publiser #8
+            publiser #9
+            publiser #10
+            publiser #11
+            publiser #12
+
+   - `mapping`: Elasticsearch 인덱스에 저장될 각 필드의 타입과 속성을 정의합니다. 
+
+
+     ```python
+     mapping = {
+         "properties": {
+             "author": {"type": "text", "analyzer": "nori_analyzer"},
+             "category": {"type": "text", "analyzer": "nori_analyzer"},
+             "introduction": {"type": "text", "analyzer": "nori_analyzer"},
+             "publisher": {"type": "text", "analyzer": "nori_analyzer"},
+             "title": {"type": "text", "analyzer": "nori_analyzer"},
+             "publish_date": {"type": "date"},
+             "isbn": {"type": "unsigned_long"},
+             "toc": {"type": "text", "analyzer": "nori_analyzer"},
+             "embedding": {
+                 "type": "dense_vector",
+                 "dims": 768,
+                 "index": True,
+                 "similarity": "cosine"
+             }
+         }
+     }
+     ```
+     **mapping**:
+     - elasticsearch에 올릴 항목들의 properties를 지정
+     - `author`, `category`, `introduction`, `publisher`, `title`, `toc` 
+       - field type : `text` 
+       - analyzer : `nori_analyzer`
+     - `publish_date`
+       - field type : `date`
+     - `isbn`
+       - field type : `long`
+     - `embedding` : KNN 기반 유사도 검색에 대응
+       - field type : `dense_vector`
+       - dims : 벡터 차원 수 지정
+       - index : 벡터 필드 색인 유무
+         - true여야 검색 쿼리에서 벡터 유사성을 검색 가능
+       - similarity : 벡터간 유사성 측정 방법
+
 
 ## 사용법
 
-Python 환경에서 스크립트를 실행하세요. 스크립트는 CSV 파일을 읽고, 데이터를 처리한 후 지정된 Elasticsearch 인덱스에 청크 단위로 업로드합니다.
+1. Python 환경에서 스크립트를 실행합니다.
+2. 스크립트는 CSV 파일을 읽고, 데이터를 처리한 후 지정된 Elasticsearch 인덱스에 청크 단위로 업로드합니다.
 
-```bash
-python your_script_name.py
-```
-
-## 기능
-
-- CSV 파일에서 데이터를 읽습니다.
-- Elasticsearch 문서를 생성하기 위해 각 행을 처리합니다.
-- `sentence-transformers`를 사용하여 텍스트에 대한 임베딩을 생성합니다.
-- 청크 단위로 Elasticsearch에 문서를 업로드합니다.
+   ```bash
+   python your_script_name.py
+   ```
 
 ## 주의 사항
 
-- CSV 파일이 올바른 형식과 인코딩(UTF-8)인지 확인하세요.
-- Elasticsearch 인스턴스의 건강과 가용성을 확인하세요.
-- 오류나 경고에 대해 스크립트의 진행 상황과 로그를 모니터링하세요.
-
----
+- Elasticsearch 인스턴스의 설정과 연결을 확인하세요.
+- CSV 파일 형식
