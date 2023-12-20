@@ -1,6 +1,7 @@
 # Book rec with LLM
 book recommendation system for KnP
 ## 폴더 구성
+```
 │  .gitattributes
 │  .gitignore
 │  config.json //실행사항의 config
@@ -69,3 +70,4 @@ book recommendation system for KnP
 │  └─templates
 │          index_mobile.html
 │          __init__.py
+```
