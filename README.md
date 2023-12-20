@@ -71,3 +71,9 @@ book recommendation system for KnP
 │          index_mobile.html
 │          __init__.py
 ```
+## 실행 방법
+### 웹앱
+
+### 모델 endpoint
+
+### elasticsearch
