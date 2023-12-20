@@ -10,8 +10,10 @@ DEFAULT_BOS_TOKEN = "</s>"
 DEFAULT_UNK_TOKEN = "</s>"
 PROMPT_DICT = {
     "prompt_input": (
-        "EVALUATION : input에 주어진 사용자 QUERY와 INFO를 비교하여 알맞은 책을 추천했는지 P 혹은 F로 평가해줘.\n\n "
-        + "input: {input} \n\n"
+        "EVALUATION: 주어진 사용자의 질문과 정보를 바탕으로 한 책 추천의 적절성을 평가해 주세요. "
+        "만약 추천된 책이 사용자의 QUERY과 관련되어 있고 INFO에 잘 부합한다면 'Pass'을, 그렇지 않다면 'Fail'을 부여하세요. "
+        "책의 주제, 사용자 질문과의 관련성, 그리고 사용자의 필요에 대한 적합성을 고려하세요. "
+        "추천이 적절하고 관련이 있는지 평가하는 것이 중요합니다.\n{input}\n\n"
     )
 }
 
@@ -42,10 +44,10 @@ def generate_evaluation(fullstring: str, model=model, tokenizer=tokenizer):
         num_beams=2,
         repetition_penalty=2.0,
         no_repeat_ngram_size=4,
-        max_new_tokens=1024,
+        max_new_tokens=512,
         eos_token_id=tokenizer.eos_token_id,
         do_sample=True,
-        top_p=0.5,
+        top_p=0.15,
         early_stopping=True,
     )
     mapped_prompt = PROMPT_DICT["prompt_input"].format_map({"input": fullstring})
