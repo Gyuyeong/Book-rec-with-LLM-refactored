@@ -306,6 +306,7 @@ book_recommendation: {input에 주어진 책 정보와 사용자 질의를 바�
 ```
 
 ## LoRA Configuration
+`peft` 라이브러리를 사용
 ```
 config = LoraConfig(
     task_type=TaskType.CAUSAL_LM,
@@ -314,8 +315,6 @@ config = LoraConfig(
     lora_dropout=0.05,
     bias="none"
 )
-
-model = get_peft_model(model, config)
 ```
 
 설정 가능한 값:
@@ -324,3 +323,34 @@ model = get_peft_model(model, config)
 |r|Low intrinsic Rank, 원본 모델을 근사한 rank값|8|
 |lora_alpha|학습 시 LoRA가 영향을 끼치는 정도. 여러 논문에서 16을 고정으로 사용|16|
 |lora_dropout|과적합 방지를 위해 일정 cell들을 학습 중에 비활성화하는 비율|0.05|
+
+원본 모델에 LoRA 설정을 추가
+```
+model = get_peft_model(model, config)
+```
+LoRA 설정된 모델을 학습 시, 원본 모델의 weight 값이 바뀌는 것이 아닌 adapter 파일이 따로 생성됨.
+
+## Training Arguments
+`TrainingArguments`를 사용해서 학습 시 사용할 하이퍼파라미터들을 설정
+
+```
+training_args = TrainingArguments(
+    output_dir="./consolidated_models/kakao_models/data_300_n_100_lr_3e_5", # 학습된 모델 저장 경로
+    overwrite_output_dir=True, #overwrite the content of the output directory
+    num_train_epochs=100, # number of training epochs
+    per_device_train_batch_size=1, # batch size for training. GPU 크기 문제로 batch size는 1로 해야 했다
+    per_device_eval_batch_size=1,  # batch size for evaluation
+    eval_steps = 5, # Number of update steps between two evaluations.
+    save_steps=10, # after # steps model is saved
+    #evaluation_strategy="steps",
+    logging_steps=10,
+    warmup_steps=5,# number of warmup steps for learning rate scheduler
+    prediction_loss_only=True,
+    fp16=True,  # 공간 절약을 위해 floating point 16d으로 학습을 진행 (물론 현재 사용하는 모델이 fp16이라 큰 상관은 없다)
+    gradient_accumulation_steps=16,  # GPU 공간 절약을 위해 추가한 hyperparameter
+    learning_rate=3e-5,  # learning rate은 조금 작게 하고 오랫동안 학습시키는 방식을 택함 (1e-05 3e-05 테스트 해봄)
+    lr_scheduler_type="cosine",  # learning rate가 시간이 갈수록 점점 작아지게끔 하는 scheduler 사용
+    #load_best_model_at_end=True, # always save the best model
+    #save_total_limit=10  # total saved checkpoints are 10
+)
+```
