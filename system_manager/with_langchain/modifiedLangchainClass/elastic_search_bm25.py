@@ -20,6 +20,7 @@ import elasticsearch
 
 # Action input에서 검색에 영향을 줄 수 있는 요소 제거
 
+
 def remove_special_characters(s):
     print("\nbefore removing----------")
     print(s)
@@ -28,6 +29,7 @@ def remove_special_characters(s):
     print("\nafter removing----------")
     print(s)
     return s
+
 
 def remove_author_publisher(s):
     keywords = ["Author ", "author ", "Publisher ", "publisher "]
@@ -183,7 +185,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
                 "num_candidates": 50,
                 "boost": 30,
             },
-            "size": 10,
+            "size": n,
         }
         res = self.client.search(
             index=self.index_name, body=query_dict, request_timeout=1200
@@ -217,17 +219,11 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         ):
             query = remove_author_publisher(query)
 
-        query_dict = {
-            "query": {
-                "term": {
-                "author.keyword": {
-                    "value": query
-                }
-                }
-            }
-        }
+        query_dict = {"query": {"term": {"author.keyword": {"value": query}}}}
 
-        res = self.client.search(index=self.index_name, body=query_dict, request_timeout=1200)
+        res = self.client.search(
+            index=self.index_name, body=query_dict, request_timeout=1200
+        )
         docs = []
 
         for r in res["hits"]["hits"]:
@@ -244,7 +240,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         print(docs[0:2])
         print("--------------------------------------------debug\n\n")
         return docs[0:2]
-    
+
     def get_title_info(self, query: str) -> List[short_info]:
         query_dict: dict()
         query = remove_special_characters(query)
@@ -256,17 +252,11 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         ):
             query = remove_author_publisher(query)
 
-        query_dict = {
-            "query": {
-                "term": {
-                "title.keyword": {
-                    "value": query
-                }
-                }
-            }
-        }
+        query_dict = {"query": {"term": {"title.keyword": {"value": query}}}}
 
-        res = self.client.search(index=self.index_name, body=query_dict,request_timeout=1200)
+        res = self.client.search(
+            index=self.index_name, body=query_dict, request_timeout=1200
+        )
         docs = []
 
         for r in res["hits"]["hits"]:
@@ -283,24 +273,17 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         print(docs[0:2])
         print("--------------------------------------------debug\n\n")
         return docs[0:2]
-    
-    
+
     def get_publisher_info(self, query: str) -> List[short_info]:
         query_dict: dict()
         query = remove_special_characters(query)
         query = remove_author_publisher(query)
 
-        query_dict = {
-            "query": {
-                "term": {
-                "publisher.keyword": {
-                    "value": query
-                }
-                }
-            }
-        }
+        query_dict = {"query": {"term": {"publisher.keyword": {"value": query}}}}
 
-        res = self.client.search(index=self.index_name, body=query_dict, request_timeout=1200)
+        res = self.client.search(
+            index=self.index_name, body=query_dict, request_timeout=1200
+        )
         docs = []
 
         for r in res["hits"]["hits"]:
@@ -317,4 +300,5 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         print(docs[0:2])
         print("--------------------------------------------debug\n\n")
         return docs[0:2]
+
     # 작가정보를 바탕으로 elasticsearch가 이루어지는 부분

@@ -124,7 +124,7 @@ class ElasticSearchBM25Retriever:
                 "num_candidates": 50,
                 "boost": 30,
             },
-            "size": 10,
+            "size": n,
         }
         res = self.client.search(
             index=self.index_name, body=query_dict, request_timeout=1200
@@ -220,6 +220,9 @@ class ElasticSearchBM25Retriever:
     def knn_only_search(
         self, tensor: np.ndarray, excluded_title: str
     ) -> List[Bookdata]:
+        with open("config.json", encoding="UTF-8") as f:
+            config = json.load(f)
+        n = config["elasticsearch_result_count"]
         query_dict = {
             "knn": {
                 "field": "embedding",
@@ -228,7 +231,7 @@ class ElasticSearchBM25Retriever:
                 "num_candidates": 50,
                 "boost": 30,
             },
-            "size": 10,
+            "size": n,
         }
         res = self.client.search(
             index=self.index_name, body=query_dict, request_timeout=1200
