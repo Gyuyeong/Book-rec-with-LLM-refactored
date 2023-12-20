@@ -23,8 +23,8 @@ pip install bitsandbytes
 pip install peft
 ```
 
-### 주의 사항
-`Pytorch`와 `transformers`의 버전은 반드시 위 버전을 따라야 함
+### 설치 시 주의 사항
+`Pytorch`와 `transformers`의 버전은 반드시 위 버전을 따라야 함. 학습 단계에서 torch 관련 변수들의 유무로 인해 학습이 실패하는 경우, 대부분 pytorch 버전 문제이다. `Transformers`가 현재로서는 `Pytorch 1.13.0` 버전만 호환이 잘 된다. 추후 업데이트가 있을 때까지는 `1.13.0` 버전을 사용해야 문제가 없다.
 
 ## Model Fine-tuning
 `./training_model` 파일 내에 위치
