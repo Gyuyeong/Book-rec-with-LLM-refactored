@@ -10,6 +10,13 @@ with open("config.json", "r", encoding="UTF-8") as f:
 
 
 class Bookdata:
+    """
+    도서정보를 담고있는 클래스
+    title, author, publisher, introduction, isbn, tensor
+    로 인스턴스 생성
+    str로 사용시 "title : 제목, author : 작가, introduction : 책 소개" 형태
+    """
+
     def __init__(self, title, introduction, author, publisher, isbn, tensor):
         self.title = title
         self.author = author
@@ -24,67 +31,13 @@ class Bookdata:
 
 class ElasticSearchBM25Retriever:
     """
-    To connect to an Elasticsearch instance that requires login credentials,
-    including Elastic Cloud, use the Elasticsearch URL format
-    https://username:password@es_host:9243. For example, to connect to Elastic
-    Cloud, create the Elasticsearch URL with the required authentication details and
-    pass it to the ElasticVectorSearch constructor as the named parameter
-    elasticsearch_url.
-
-    You can obtain your Elastic Cloud URL and login credentials by logging in to the
-    Elastic Cloud console at https://cloud.elastic.co, selecting your deployment, and
-    navigating to the "Deployments" page.
-
-    To obtain your Elastic Cloud password for the default "elastic" user:
-
-    1. Log in to the Elastic Cloud console at https://cloud.elastic.co
-    2. Go to "Security" > "Users"
-    3. Locate the "elastic" user and click "Edit"
-    4. Click "Reset password"
-    5. Follow the prompts to reset the password
-
-    The format for Elastic Cloud URLs is
-    https://username:password@cluster_id.region_id.gcp.cloud.es.io:9243.
+    엘라스틱서치 검색 함수와 클라이언트 설정하는 클래스.
+    엘라스틱서치 클라이언트와 인덱스명으로 클래스 인스턴스 생성.
     """
 
     def __init__(self, client, index_name: str):
         self.client = client
         self.index_name = index_name
-
-    @classmethod
-    def create(
-        cls, elasticsearch_url: str, index_name: str, k1: float = 2.0, b: float = 0.75
-    ) -> Type["ElasticSearchBM25Retriever"]:
-        from elasticsearch import Elasticsearch
-
-        # Create an Elasticsearch client instance
-        es = Elasticsearch(
-            ["https://115.71.239.131:9200"],
-            basic_auth=("elastic", "HWH1rJdFReoOA8i-NPiy"),
-            verify_certs=False,
-        )
-
-        # Define the index settings and mappings
-        settings = {
-            "analysis": {"analyzer": {"default": {"type": "standard"}}},
-            "similarity": {
-                "custom_bm25": {
-                    "type": "BM25",
-                    "k1": k1,
-                    "b": b,
-                }
-            },
-        }
-        mappings = {
-            "properties": {
-                "content": {
-                    "type": "text",
-                    "similarity": "custom_bm25",
-                }
-            }
-        }
-        es.indices.create(index=index_name, mappings=mappings, settings=settings)
-        return cls(es, index_name)
 
     def search_with_query(self, query: str) -> List[Bookdata]:
         with open("config.json", encoding="UTF-8") as f:

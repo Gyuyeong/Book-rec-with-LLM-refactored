@@ -21,12 +21,18 @@ with open("config.json", encoding="UTF-8") as f:
     config = json.load(f)
 
 
-def generate_user_id():
+def generate_user_id() -> str:
+    """
+    세션 접속하는 유저에게 uuid 생성
+    """
     return str(uuid.uuid4())
 
 
 @app.route("/demo")
 def home():
+    """
+    유저 세션 접속시 해당 유저 전용 쓰레드 생성
+    """
     global input_queue_dict
     global langchoice_queue_dict
     global output_queue_dict
@@ -46,7 +52,7 @@ def home():
 
     # start server-side loop in separate thread
 
-    if config["modelchoice"] == "openai":
+    if config["flowchoice"] == "langchain":
         server_thread = threading.Thread(
             target=interact_fullOpenAI,
             args=(
@@ -56,7 +62,7 @@ def home():
                 user_id,
             ),
         )
-    if config["modelchoice"] == "opensourceLLM":
+    if config["flowchoice"] == "nolangchain":
         server_thread = threading.Thread(
             target=interact_opensourceGeneration,
             args=(
@@ -75,6 +81,9 @@ def home():
 
 @app.route("/process", methods=["POST"])
 def process():
+    """
+    위에서 생성한 쓰레드에 queue로 웹에서의 유저 입력을 전달
+    """
     global input_queue_dict
     global langchoice_queue_dict
     global output_queue_dict

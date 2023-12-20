@@ -2,6 +2,11 @@ import openai
 
 
 def isbookPass(userquery: str, bookinfo) -> bool:
+    """
+    userquery : 유저 입력 str
+    bookinfo : 평가할 Bookdata, 또는 str
+    return : 평가 통과시 true 아니면 false
+    """
     try:
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
