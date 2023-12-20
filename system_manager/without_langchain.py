@@ -1,5 +1,4 @@
 import os
-import re
 
 # api keys go here
 import keys
@@ -10,12 +9,9 @@ os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
 import elasticsearch
 import threading
-import urllib
 import requests
 from typing import List
 
-# es=Elasticsearch([{'host':'localhost','port':9200}])
-# es.sql.query(body={'query': 'select * from global_res_todos_acco...'})
 import queue
 import logging
 import json
@@ -42,9 +38,13 @@ retriever = ElasticSearchBM25Retriever(
 
 
 def getUserIntention(user_input):
+    """user_input : 유저 입력 문자열
+    return : 단서에서 추출된 제목, 저자, 출판사, 키워드, 의도파악여부
+    """
     url = config["intention_generation_url"]
     data = {"input": user_input}
     intention_rawstring = requests.post(url, json=data)
+    # 생성된 intention에서 단서추출
     start = intention_rawstring.text.find("단서들: [") + len("단서들: [")
     end = intention_rawstring.text.find("]", start)
     clue_str = intention_rawstring.text[start:end]
@@ -75,6 +75,11 @@ def getUserIntention(user_input):
 
 
 def similar_booksearch(bookname, user_query) -> List:
+    """
+    bookname : 유사도서 검색할 도서 title 문자열
+    user query : 유저 쿼리 문자열
+    return : Bookdata 의 리스트
+    """
     title_result = retriever.search_with_title(bookname)
     return_result = list()
     if len(title_result) == 0:
@@ -85,6 +90,11 @@ def similar_booksearch(bookname, user_query) -> List:
 
 
 def author_search(author_name, user_query):
+    """
+    author_name : 유사도서 검색할 도서 작가 문자열
+    user query : 유저 쿼리 문자열
+    return : Bookdata 의 리스트, 작가검색 여부(실패후 키워드 검색 했을시 True)
+    """
     author_result = retriever.search_with_author(author_name)
     did_keyword_search = False
     if len(author_result) == 0:
@@ -94,6 +104,11 @@ def author_search(author_name, user_query):
 
 
 def publisher_search(publisher_name, user_query):
+    """
+    publisher_name : 유사도서 검색할 도서 작가 문자열
+    user query : 유저 쿼리 문자열
+    return : Bookdata 의 리스트, 작가검색 여부(실패후 키워드 검색 했을시 True)
+    """
     publisher_result = retriever.search_with_publisher(publisher_name)
     did_keyword_search = False
     if len(publisher_result) == 0:
@@ -103,14 +118,24 @@ def publisher_search(publisher_name, user_query):
 
 
 def keyword_search(user_query) -> List:
+    """
+    user query : 유저 쿼리 문자열
+    return : Bookdata 의 리스트
+    """
     result = retriever.search_with_query(user_query)
     return result
 
 
 def evaluate_books(book_list, user_query) -> List:
+    """
+    book_list : 평가할 Bookdata의 리스트
+    user_query : 유저 쿼리
+    return : 최대 설정된 반화도서 수 만큼의 Bookdata의 리스트
+    """
     if config["use_gpt_api_for_eval"]:
         from LLMs.GPT_API_utils.Recommendation_Evaluation import isbookPass
 
+        # gpt api의 경우 쓰레드 생성해서 동시에 평가
         bookresultQueue = queue.Queue()
 
         def book_pass_thread(userquery: str, bookinfo):
@@ -149,6 +174,12 @@ def evaluate_books(book_list, user_query) -> List:
 
 
 def generate_recommendation_sentence(book_list, user_query, langchoice):
+    """
+    book_list : 추천사유 생성할 Bookdata의 리스트
+    user_query : 유저 쿼리
+    langchoice : 선택된 언어 코드(문자열); "ko" 또는 "en"
+    return : 웹에 출력할 html
+    """
     if config["use_gpt_api_for_eval"]:
         langchoice_Reference = {"en": " Answer in English.", "ko": " 한국어로 답변해줘."}
         from LLMs.GPT_API_utils.Generate_Recommendation import generate_recommendation
@@ -188,6 +219,12 @@ def generate_recommendation_sentence(book_list, user_query, langchoice):
 
 
 def generate_meta_search_sentence(book_list, user_query, langchoice):
+    """
+    book_list : 메타정보 검색결과 생성할 Bookdata의 리스트
+    user_query : 유저 쿼리(현재는 사용 안함)
+    langchoice : 선택된 언어 코드(문자열); "ko" 또는 "en"
+    return : 웹에 출력할 html
+    """
     returnstring = str()
     if langchoice == "ko":
         returnstring = config["meta_search_canned_text_ko"]
@@ -252,52 +289,73 @@ def interact_opensourceGeneration(
 
         title, author, publisher, keywordlist, is_else = getUserIntention(webinput)
         generated_sentences = str()
+        # 의도가 '그 외' 인 경우
         if is_else:
             weboutput_queue.put("Cannot handle intention")
             print("in else")
+        # 유사도서 검색
         elif title != None:
             search_result = similar_booksearch(title, webinput)
             passed_books = evaluate_books(search_result, webinput)
-            generated_sentences = generate_recommendation_sentence(
-                passed_books, webinput, langchoice
-            )
-            weboutput_queue.put(generated_sentences)
+            if len(passed_books) == 0:
+                weboutput_queue.put(config["no_book_found_text"])
+            else:
+                generated_sentences = generate_recommendation_sentence(
+                    passed_books, webinput, langchoice
+                )
+                weboutput_queue.put(generated_sentences)
+        # 작가 검색
         elif author != None:
             search_result, did_keyword_search = author_search(author, webinput)
             print(search_result, did_keyword_search)
+            # 작가 검색 실패시 키워드검색
             if did_keyword_search:
                 passed_books = evaluate_books(search_result, webinput)
-                generated_sentences = generate_recommendation_sentence(
-                    passed_books, webinput, langchoice
-                )
-                weboutput_queue.put(generated_sentences)
+                if len(passed_books) == 0:
+                    weboutput_queue.put(config["no_book_found_text"])
+                else:
+                    generated_sentences = generate_recommendation_sentence(
+                        passed_books, webinput, langchoice
+                    )
+                    weboutput_queue.put(generated_sentences)
+            # 작가 검색 성공
             else:
                 generated_sentences = generate_meta_search_sentence(
                     search_result, webinput, langchoice
                 )
                 weboutput_queue.put(generated_sentences)
+        # 출판사 검색
         elif publisher != None:
             search_result, did_keyword_search = publisher_search(publisher, webinput)
+            # 출판사 검색 실패시 키워드검색
             if did_keyword_search:
                 passed_books = evaluate_books(search_result, webinput)
-                generated_sentences = generate_recommendation_sentence(
-                    passed_books, webinput, langchoice
-                )
-                weboutput_queue.put(generated_sentences)
+                if len(passed_books) == 0:
+                    weboutput_queue.put(config["no_book_found_text"])
+                else:
+                    generated_sentences = generate_recommendation_sentence(
+                        passed_books, webinput, langchoice
+                    )
+                    weboutput_queue.put(generated_sentences)
+            # 출판사 검색 성공
             else:
                 generated_sentences = generate_meta_search_sentence(
                     search_result, webinput, langchoice
                 )
                 weboutput_queue.put(generated_sentences)
+        # 키워드 검색
         else:
             search_result = keyword_search(webinput)
             passed_books = evaluate_books(search_result, webinput)
-            generated_sentences = generate_recommendation_sentence(
-                passed_books, webinput, langchoice
-            )
-            weboutput_queue.put(generated_sentences)
+            if len(passed_books) == 0:
+                weboutput_queue.put(config["no_book_found_text"])
+            else:
+                generated_sentences = generate_recommendation_sentence(
+                    passed_books, webinput, langchoice
+                )
+                weboutput_queue.put(generated_sentences)
         print(generated_sentences)
-        # region mongodb
+        # region mongodb & logging
         mongodoc = {
             "user_id": user_id,
             "usermsg": webinput,
