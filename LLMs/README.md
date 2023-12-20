@@ -23,3 +23,6 @@ pip install peft
 
 ### 주의 사항
 `Pytorch`와 `transformers`의 버전은 반드시 위 버전을 따라야 함
+
+## Model Fine-tuning
+`LLMs` 파일 내에 위치
