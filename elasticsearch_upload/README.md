@@ -1,6 +1,6 @@
 # Elasticsearch 데이터 업로더
 
-이 스크립트는 CSV 파일에서 Elasticsearch 인덱스로 데이터를 업로드하기 위해 설계되었습니다. `sentence-transformers` 및 `elasticsearch` 파이썬 패키지를 사용하여 데이터를 효율적으로 처리하고 업로드합니다.
+이 스크립트는 CSV 파일에서 Elasticsearch 인덱스로 데이터를 업로드하기 위해 설계되었습니다. `sentence-transformers`, `elasticsearch`, `pandas`, `tqdm` 파이썬 패키지를 사용하여 데이터를 효율적으로 처리하고 업로드합니다.
 
 ## 사용한 라이브러리
 
@@ -20,8 +20,12 @@ pip install tqdm
 ## 데이터 CSV 형식
 
 - CSV 파일은 UTF-8 인코딩을 사용해야 합니다.
-- 다음과 같은 열이 포함되어야 합니다: `author`, `category`, `introduction`, `publisher`, `title`, `publish_date`, `isbn`, `toc`.
-- 각 열은 적절한 데이터 타입을 가져야 합니다 (예: `publish_date`는 날짜 형식).
+- 다음과 같은 행이 포함되어야 합니다: `author`, `category`, `introduction`, `publisher`, `title`, `publish_date`, `isbn`, `toc`.
+- 각 행은 적절한 데이터 타입을 가져야 합니다 (예: `publish_date`는 날짜 형식).
+- CSV 파일은 전처리가 진행된 상태여야 합니다.
+  - **각 book information에 대하여 publish_date 항목은 반드시 date 형식이어야 합니다.**
+  - 나머지 항목에 대해서는 빈칸이 되지 않도록 처리해야합니다.
+  - html태그가 존재할 경우, 없애는 것을 추천합니다.
   
 | `author` | `category` | `introduction` | `publisher` | `title` | `publish_date` | `isbn` | `toc` |
 |----------|------------|----------------|-------------|---------|----------------|--------|-------|
@@ -52,16 +56,18 @@ pip install tqdm
   
 2. **업로드 설정**:
     ```
+    model = SentenceTransformer("snunlp/KR-SBERT-V40K-klueNLI-augSTS")
     input_filename = f"csv file directory to upload"
     chunksize = 50
     index_name = "data"
     ```
+    - `model` : embedding을 할 때 사용할 모델 지정
     - `input_filename` : 도서 데이터가 담긴 csv 파일의 경로
     - `chunksize` : upload 하는 단위인 chunk의 크기 지정
     - `index_name` : 도서 데이터를 upload 할 Elasticsearch의 index name
 
 3. **인덱스 설정 (`setting`과 `mapping`)**:
-
+   
    - `setting`: 분석기와 토크나이저를 정의합니다. 예를 들어, 한글 텍스트 분석을 위한 Nori 분석기 설정은 다음과 같습니다:
 
      ```python
@@ -144,13 +150,52 @@ pip install tqdm
        - index : 벡터 필드 색인 유무
          - true여야 검색 쿼리에서 벡터 유사성을 검색 가능
        - similarity : 벡터간 유사성 측정 방법
+  
+4. **데이터 처리**
+    ```
+    data = []
 
+    def appendbulk(row):
+        targetstring = f"category: {row['category']}, author: {row['author']}, introduction: {row['introduction']}, title: {row['title']}"
+        embedding = model.encode(targetstring)
 
+        data.append({
+            "_index": "data",
+            "_source": {
+                "author": row["author"],
+                "category": row["category"],
+                "introduction": row["introduction"],
+                "publisher": row["publisher"],
+                "title": row["title"],
+                "publish_date": row["publish_date"],
+                "isbn": row["isbn"],
+                "toc": row["toc"],
+                "embedding": embedding,
+            },
+        })
+    ```
+    - embedding 진행
+      - 대상 : `targetstring`
+        - `category`, `author`, `introduction`, `title`를 한 문장으로 연결
+    - data append
+      - `_index`: 업로드할 Elasticsearch index name
+      - `_source`: Elasticsearch에 upload할 항목 지정
+
+5. **데이터 업로드**
+   
+   - CSV 파일을 읽고, 청크 단위로 데이터를 처리한 후 Elasticsearch 인덱스에 업로드합니다.
+    ```
+    with pd.read_csv(input_filename, chunksize=chunksize, encoding="utf-8") as reader:
+    for chunk in tqdm(reader):
+        print("--------------------------------------")
+        chunk.apply(appendbulk, axis=1)
+        bulk(es, data)
+        data.clear()
+    ```   
+    
 ## 사용법
 
-1. Python 환경에서 스크립트를 실행합니다.
-2. 스크립트는 CSV 파일을 읽고, 데이터를 처리한 후 지정된 Elasticsearch 인덱스에 청크 단위로 업로드합니다.
-
+-  Python 환경에서 스크립트를 실행합니다.
    ```bash
    python your_script_name.py
    ```
@@ -158,4 +203,4 @@ pip install tqdm
 ## 주의 사항
 
 - Elasticsearch 인스턴스의 설정과 연결을 확인하세요.
-- CSV 파일 형식
+- CSV 파일 형식과 data type이 올바른지 확인하세요. 만약 맞지 않는 경우 upload가 진행되지 않습니다.
