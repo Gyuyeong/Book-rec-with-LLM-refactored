@@ -104,40 +104,52 @@ $ bin/elasticsearch-plugin install analysis-nori
 
 
      ```python
-     mapping = {
-         "properties": {
-             "author": {"type": "text", "analyzer": "nori_analyzer"},
-             "category": {"type": "text", "analyzer": "nori_analyzer"},
-             "introduction": {"type": "text", "analyzer": "nori_analyzer"},
-             "publisher": {"type": "text", "analyzer": "nori_analyzer"},
-             "title": {"type": "text", "analyzer": "nori_analyzer"},
-             "publish_date": {"type": "date"},
-             "isbn": {"type": "unsigned_long"},
-             "toc": {"type": "text", "analyzer": "nori_analyzer"},
-             "embedding": {
-                 "type": "dense_vector",
-                 "dims": 768,
-                 "index": True,
-                 "similarity": "cosine"
-             }
-         }
-     }
+        mapping = {
+            "properties": {
+                "author": {
+                    "type": "text",
+                    "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+                    "analyzer": "nori_analyzer",
+                },
+                "category": {"type": "text", "analyzer": "nori_analyzer"},
+                "introduction": {
+                    "type": "text",
+                    "analyzer": "nori_analyzer",
+                    "term_vector": "with_positions_offsets_payloads",
+                },
+                "publisher": {
+                    "type": "text",
+                    "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+                    "analyzer": "nori_analyzer",
+                },
+                "title": {
+                    "type": "text",
+                    "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+                    "analyzer": "nori_analyzer",
+                },
+                "publish_date": {
+                    "type": "date",
+                },
+                "isbn": {"type": "unsigned_long"},
+                "toc": {"type": "text", "analyzer": "nori_analyzer"},
+                "embedding": {
+                    "type": "dense_vector",
+                    "dims": 768,
+                    "index": True,
+                    "similarity": "cosine",
+                },
+            }
+        }
      ```
      **mapping**:
-     - elasticsearch에 올릴 항목들의 properties를 지정
-     - `author`, `category`, `introduction`, `publisher`, `title`, `toc` 
-       - field type : `text` 
-       - analyzer : `nori_analyzer`
-     - `publish_date`
-       - field type : `date`
-     - `isbn`
-       - field type : `long`
-     - `embedding` : KNN 기반 유사도 검색에 대응
-       - field type : `dense_vector`
-       - dims : 벡터 차원 수 지정
-       - index : 벡터 필드 색인 유무
-         - true여야 검색 쿼리에서 벡터 유사성을 검색 가능
-       - similarity : 벡터간 유사성 측정 방법
+    - `type`
+      - `text` : 문자열 타입 (입력된 문자열을 텀 단위로 쪼개어 역 색인)
+      - `keyword` : 문자열 타입 (입력된 문자열을 하나의 토큰으로 저장)
+      - `unsigned long` : 정수 타입
+      - `date` : 날짜 타입
+      - `dense_vector` : vector 타입
+    - `fields` : 멀티 다중 필드 지원
+      - 하나의 필드에 대해 여러가지 다른 방식으로 색인화하고 검색하고자 사용
   
 4. **데이터 처리**
     ```

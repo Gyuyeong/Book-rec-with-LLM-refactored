@@ -22,8 +22,8 @@ with open("config.json", "r", encoding="UTF-8") as f:
 
     config = json.load(f)
 es = Elasticsearch(
-    config["elasticsearch_url"],
-    basic_auth=("elastic", "HWH1rJdFReoOA8i-NPiy"),
+    ["https://your_elasticsearch_server:port"],
+    basic_auth=("username", "password"),
     verify_certs=False,
     timeout=30,
     max_retries=10,
