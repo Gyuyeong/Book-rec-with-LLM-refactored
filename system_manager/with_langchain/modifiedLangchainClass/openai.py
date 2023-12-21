@@ -299,7 +299,7 @@ class ChatOpenAI(BaseChatModel):
             # temp = kwargs["messages"][0]["content"]
             # kwargs["messages"][0]["content"] = f"{random.randint(1,10)}"+temp
             d: dict()
-            # langchain에서 elastic tool을 거쳤다면 반드시 final answer를 생성
+            # langchain에서 cannot tool 을 거쳤다면 반드시 final answer를 생성
             if str(kwargs["messages"][0]["content"]).endswith(
                 "Final Answer: \nThought:"
             ):
