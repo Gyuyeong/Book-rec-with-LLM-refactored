@@ -74,39 +74,6 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         self.client = client
         self.index_name = index_name
 
-    @classmethod
-    def create(
-        cls, elasticsearch_url: str, index_name: str, k1: float = 2.0, b: float = 0.75
-    ) -> ElasticSearchBM25Retriever:
-        from elasticsearch import Elasticsearch
-
-        # Create an Elasticsearch client instance
-        es = Elasticsearch(elasticsearch_url)
-
-        # Define the index settings and mappings
-        settings = {
-            "analysis": {"analyzer": {"default": {"type": "standard"}}},
-            "similarity": {
-                "custom_bm25": {
-                    "type": "BM25",
-                    "k1": k1,
-                    "b": b,
-                }
-            },
-        }
-        mappings = {
-            "properties": {
-                "content": {
-                    "type": "text",
-                    "similarity": "custom_bm25",  # Use the custom BM25 similarity
-                }
-            }
-        }
-
-        # Create the index with the specified settings and mappings
-        es.indices.create(index=index_name, mappings=mappings, settings=settings)
-        return cls(es, index_name)
-
     def add_texts(
         self,
         texts: Iterable[str],

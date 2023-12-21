@@ -8,6 +8,11 @@ naver_client_secret = keys.naver_client_secret
 
 
 def translate_text(target_lang, text):
+    """
+    target_lang : 대상 언어 코드 str ("en", "ko")
+    text : 번역할 텍스트
+    return : 번역된 텍스트.
+    """
     # detect language
     encQuery = urllib.parse.quote(text)
     data = "query=" + encQuery
@@ -24,9 +29,10 @@ def translate_text(target_lang, text):
     else:
         print("Error detecting language:" + rescode)
         return text
-    # translate to target language
+    # 번역할 텍스트가 이미 대상 언어이면 그대로 리턴
     if target_lang == source_lang:
         return text
+    # translate to target language
     encText = urllib.parse.quote(text)
     data = f"source={source_lang}&target={target_lang}&text=" + encText
     url = "https://openapi.naver.com/v1/papago/n2mt"

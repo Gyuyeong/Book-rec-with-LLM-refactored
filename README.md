@@ -7,6 +7,7 @@ book recommendation system for KnP
 │  config.json //실행사항의 config
 │  keys.py.example //keys.py 으로 사용해서 필요한 key를 입력
 │  README.md
+│  requirements.txt //필요 python library
 │
 ├─elasticsearch_upload //엘라스틱서치 document업로드
 │      README.md
@@ -40,9 +41,11 @@ book recommendation system for KnP
 │  │      intention_train.py
 │
 ├─SBERT //도서 임베딩을 위한 SBERT의 학습 및 생성
+│      elasticsearch_retriever_custom_model.py //SBERT 모델 이용한 elasticsearch 검색
 │      README.md
-│      unsup_CL_generation.py //SBERT 생성
-│      unsup_CL_train.py //SBERT 학습
+│      sentence_transformer_encoding_custom_model.py //SBERT 모델 이용한 elasticsearch 업로드
+│      unsup_CL_generation.py //SBERT 모델로 생성
+│      unsup_CL_train.py //SBERT 모델 학습
 │
 ├─system_manager //백엔드 시스템
 │  │  without_langchain.py //langchain을 사용하지 않는 flow. multi-turn(memory) 불가
@@ -72,13 +75,39 @@ book recommendation system for KnP
 │          __init__.py
 ```
 ## 실행 방법
+### 파이썬 라이브러리
+파이썬 3.8.13  
+Book-rec-with-LLM-refactored/ 디렉토리에서 작업  
+pip install -r requirements.txt
 ### 웹앱
-
+Book-rec-with-LLM-refactored/ 디렉토리에서 작업  
+./web/process.py 실행  
+python ./web/process.py  
+80번 포트에 웹서버가 오픈되고 /demo 주소로 웹페이지로 이동 가능
 ### 모델 endpoint
-
+#### 통합모델
+Book-rec-with-LLM-refactored/ 디렉토리에서 작업
+./LLMs/generating_with_model/consolidated_generation.py 에 
+```
+model = PeftModel.from_pretrained(
+    model=model,
+    model_id="./consolidated_models/kakao_models/n_100_lr_3e_5/checkpoint-9300/",
+)
+```
+model_id 의 path를 실제 모델이 저장되어 있는 path를 현재 디렉토리 Book-rec-with-LLM-refactored/ 의 상대주소로 설정  
+./LLMs/generating_with_model/consolidated_generation.py 실행  
+python ./LLMs/generating_with_model/consolidated_generation.py  
+5001번 포트에 엔드포인트가 오픈.  
+/generation/intention, /generation/evaluation, /generation/final 3개의 post request가 가능
+#### 통합모델이 아닌 경우
+마찬가지로 Book-rec-with-LLM-refactored/ 디렉토리에서 작업  
+LLMs/generating_with_model/ 의 각 모델 py 파일에서 마찬가지로 상대경로로 path를 설정  
+이후 각 모델 py파일 실행
+500x번 포트에 엔드포인트 오픈  
+/generation/&lt;task&gt; 로 post request가 가능
 ### elasticsearch
-
-### 각 버전 사양
+elasticsearch_upload README.md 참고해 업로드
+업로드된 elasticsearch 실행 및 config에 주소 설정
 ## config
     "elasticsearch_result_count": 30, //엘라스틱서치에서 bm25+knn 검색할 도서 권수
     "default_number_of_books_to_return": 3, // 기본으로 검색할 최대 도서

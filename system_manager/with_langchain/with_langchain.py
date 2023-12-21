@@ -48,6 +48,12 @@ toolList = ["booksearch", "cannot", "elastic"]
 
 
 def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_id):
+    """
+    webinput_queue : 이 세션 유저의 쿼리를 받는 queue
+    weboutput_queue : 이 세션 유저의 웹에 출력할 html을 담는 queue
+    langchoice_queue : 이 세션 유저가 요청한 언어를 담는 queue
+    user_id : 이 세션 유저 uuid (세션 생성시 uuid 생성)
+    """
     langchoice_Reference = {"en": " Answer in English.", "ko": " 한국어로 답변해줘."}
     chatturn = 0
     recommended_isbn = list()
@@ -134,7 +140,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
             result = "Cannot perform task. "
             print(result)
 
-            # 강제 출력하려면 주석해제
+            # 강제로 웹에 출력하려면 주석해제
             # nonlocal web_output
             # web_output = result
             result += "Thought:Couldn't perform task. I must inform user.\n"
@@ -319,7 +325,8 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
             raise NotImplementedError("This tool does not support async")
 
     tools = [elastic_Tool(), cannot_Tool(), booksearch_Tool()]
-
+    # endregion
+    # region create agent
     # general description of agent
     prefix = """
     Have a conversation with a human, answering the following questions as best you can. 
@@ -341,7 +348,7 @@ def interact_fullOpenAI(webinput_queue, weboutput_queue, langchoice_queue, user_
     {agent_scratchpad}
     """
 
-    # memory
+    # 위 tools, prefix, suffix 로 agent 프롬프트 생성
     prompt = ZeroShotAgent.create_prompt(
         tools,
         prefix=prefix,

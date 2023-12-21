@@ -69,7 +69,7 @@ def getUserIntention(user_input):
         except ValueError:
             print("':' not found in the string adding to keyword_list")
             keyword_list.append(word)
-    if "그 외" in intention_rawstring.text:
+    if "의도: 그 외" in intention_rawstring.text:
         is_else = True
     return title, author, publisher, keyword_list, is_else
 
@@ -258,6 +258,12 @@ def generate_meta_search_sentence(book_list, user_query, langchoice):
 def interact_opensourceGeneration(
     webinput_queue, weboutput_queue, langchoice_queue, user_id
 ):
+    """
+    webinput_queue : 이 세션 유저의 쿼리를 받는 queue
+    weboutput_queue : 이 세션 유저의 웹에 출력할 html을 담는 queue
+    langchoice_queue : 이 세션 유저가 요청한 언어를 담는 queue
+    user_id : 이 세션 유저 uuid (세션 생성시 uuid 생성)
+    """
     # region logging setting
     log_file_path = f"log_from_user_{user_id}.log"
 

@@ -52,7 +52,7 @@ class ElasticSearchBM25Retriever:
         # page_content: str
         # introduction : str
         # isbn : str
-        model = SentenceTransformer("snunlp/KR-SBERT-V40K-klueNLI-augSTS")
+        model = SentenceTransformer("knp_SIMCSE_unsup_128_v1-2023-11-15_16-54-15")
         embed = model.encode(query)
         query_dict = {
             "query": {
