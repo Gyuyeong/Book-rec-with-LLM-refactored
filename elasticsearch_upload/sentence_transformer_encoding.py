@@ -18,8 +18,8 @@ index_name = "data"
 
 #Elasticsearch client setup with connection details
 es = Elasticsearch(
-    ["https://115.71.239.131:9200"],
-    basic_auth=("elastic", "HWH1rJdFReoOA8i-NPiy"),
+    ["https://your_elasticsearch_server:port"],
+    basic_auth=("username", "password"),
     verify_certs=False,
     timeout=30,
     max_retries=10,
